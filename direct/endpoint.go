@@ -29,18 +29,6 @@ var (
 	ErrInvalidResponseType        = errors.New("direct: invalid response type")
 )
 
-type debugResponse struct {
-	ID                uint64 `json:"id,omitempty"`
-	ZoneID            uint64 `json:"zone_id,omitempty"`
-	AuctionID         string `json:"auction_id,omitempty"`
-	ImpressionID      string `json:"impression_id,omitempty"`
-	IsAlternativeLink bool   `json:"is_alternative_link,omitempty"`
-	Link              string `json:"link,omitempty"`
-	Superfailover     string `json:"superfailover,omitempty"`
-	Error             error  `json:"error,omitempty"`
-	IsEmpty           bool   `json:"is_empty,omitempty"`
-}
-
 type _endpoint struct {
 	formats          types.FormatsAccessor
 	superFailoverURL string
@@ -124,15 +112,11 @@ func (e *_endpoint) execDirect(req *fasthttp.RequestCtx, response adtype.Respons
 		}
 	}
 
-	if err != nil {
-		req.Response.Header.Set("X-Status-Error", err.Error())
-	}
-
 	switch {
 	case response != nil && response.Request().Debug && req.QueryArgs().Has("noredirect"):
 		req.SetStatusCode(http.StatusOK)
 		req.SetContentType("application/json")
-		json.NewEncoder(req).Encode(debugResponse{
+		_ = json.NewEncoder(req).Encode(debugResponse{
 			ID:                id,
 			ZoneID:            zoneID,
 			ImpressionID:      impID,

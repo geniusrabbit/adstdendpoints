@@ -4,6 +4,7 @@ go 1.22
 
 require (
 	github.com/demdxx/gocast v1.2.0
+	github.com/demdxx/gocast/v2 v2.9.0
 	github.com/geniusrabbit/adcorelib v0.0.0-20240718114837-0d0206666d9a
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/valyala/fasthttp v1.55.0
@@ -18,7 +19,6 @@ require (
 	github.com/bsm/openrtb v2.1.2+incompatible // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cznic/sortutil v0.0.0-20181122101858-f5f958428db8 // indirect
-	github.com/demdxx/gocast/v2 v2.9.0 // indirect
 	github.com/demdxx/xtypes v0.2.0 // indirect
 	github.com/fasthttp/router v1.5.2 // indirect
 	github.com/geniusrabbit/gogeo v0.0.0-20190430153311-59b5dca35b92 // indirect
