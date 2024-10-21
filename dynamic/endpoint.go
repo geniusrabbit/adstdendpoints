@@ -101,7 +101,7 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Responser) e
 			URL:        url,
 			Content:    aditm.ContentItemString(adtype.ContentItemContent),
 			ContentURL: aditm.ContentItemString(adtype.ContentItemIFrameURL),
-			Fields:     aditm.ContentFields(),
+			Fields:     noEmptyFieldsMap(aditm.ContentFields()),
 			Assets:     assets,
 			Tracker:    trackerBlock,
 			Debug:      gocast.IfThen(response.Request().Debug, ad, nil),
@@ -140,4 +140,25 @@ func (e _endpoint) thumbsPrepare(thumbs []admodels.AdAssetThumb) []assetThumb {
 		})
 	}
 	return nthumbs
+}
+
+func noEmptyFieldsMap(m map[string]any) map[string]any {
+	if len(m) == 0 {
+		return nil
+	}
+	for k, v := range m {
+		switch val := v.(type) {
+		case string:
+			if val == "" {
+				delete(m, k)
+			}
+		case []string:
+			if len(val) == 0 {
+				delete(m, k)
+			}
+		case nil:
+			delete(m, k)
+		}
+	}
+	return m
 }
