@@ -18,7 +18,7 @@ fmt: ## Run formatting code
 
 .PHONY: test
 test: ## Run unit tests
-	go test -v -tags ${APP_TAGS} -race ./...
+	go test -v -tags "${APP_TAGS}" -race ./...
 
 .PHONY: tidy
 tidy: ## Run go mod tidy

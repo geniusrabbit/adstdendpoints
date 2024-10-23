@@ -6,7 +6,7 @@ package templates
 
 //line private/templates/ad_native.qtpl:2
 import (
-	"github.com/demdxx/gocast"
+	"github.com/demdxx/gocast/v2"
 
 	"github.com/geniusrabbit/adcorelib/adtype"
 )
