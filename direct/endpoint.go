@@ -47,7 +47,7 @@ func (e *_endpoint) Codename() string {
 
 func (e *_endpoint) Handle(source adstdendpoints.Source, request *adtype.BidRequest) adtype.Responser {
 	request.ImpressionUpdate(func(imp *adtype.Impression) bool {
-		imp.W, imp.H = -1, -1
+		imp.Width, imp.Height = -1, -1
 		imp.FormatTypes.Reset().Set(types.FormatDirectType)
 		return true
 	})

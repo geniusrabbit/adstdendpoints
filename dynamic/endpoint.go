@@ -1,5 +1,5 @@
 //
-// @project GeniusRabbit sspserver 2018 - 2024
+// @project GeniusRabbit adstdendpoints 2018 - 2024
 // @author Dmitry Ponomarev <demdxx@gmail.com> 2018 - 2024
 //
 

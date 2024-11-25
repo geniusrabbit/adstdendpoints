@@ -2,7 +2,7 @@
 // +build htmltemplates
 
 //
-// @project GeniusRabbit sspserver 2022
+// @project GeniusRabbit adstdendpoints 2022
 // @author Dmitry Ponomarev <demdxx@gmail.com> 2022
 //
 
@@ -10,6 +10,7 @@ package proxy
 
 import (
 	"github.com/geniusrabbit/adcorelib/adtype"
+
 	"github.com/geniusrabbit/adstdendpoints"
 	"github.com/geniusrabbit/adstdendpoints/templates"
 )
