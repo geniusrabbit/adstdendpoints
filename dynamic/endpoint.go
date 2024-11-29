@@ -39,7 +39,20 @@ func (e _endpoint) Handle(source endpoint.Source, request *adtype.BidRequest) ad
 }
 
 func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Responser) error {
-	resp := Response{Version: "1"}
+	resp := Response{
+		Version: "1",
+		CustomTracker: tracker{
+			Impressions: []string{
+				e.noErrorPixelURL(events.Impression, events.StatusCustom, nil, response, false),
+			},
+			Views: []string{
+				e.noErrorPixelURL(events.View, events.StatusCustom, nil, response, false),
+			},
+			Clicks: []string{
+				e.noErrorPixelURL(events.Click, events.StatusCustom, nil, response, false),
+			},
+		},
+	}
 
 	// Process response ad items
 	for _, ad := range response.Ads() {
@@ -47,8 +60,6 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Responser) e
 			assets       []asset
 			aditm        = ad.(adtype.ResponserItem)
 			url          string
-			impPixel, _  = e.urlGen.PixelURL(events.Impression, events.StatusSuccess, aditm, response, false)
-			viewPixel, _ = e.urlGen.PixelURL(events.View, events.StatusSuccess, aditm, response, false)
 			trackerBlock tracker
 		)
 
@@ -58,8 +69,12 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Responser) e
 		}
 
 		trackerBlock = tracker{
-			Impressions: []string{impPixel},
-			Views:       []string{viewPixel},
+			Impressions: []string{
+				e.noErrorPixelURL(events.Impression, events.StatusSuccess, aditm, response, false),
+			},
+			Views: []string{
+				e.noErrorPixelURL(events.View, events.StatusSuccess, aditm, response, false),
+			},
 		}
 
 		// Third-party trackers pixels
@@ -140,6 +155,11 @@ func (e _endpoint) thumbsPrepare(thumbs []admodels.AdAssetThumb) []assetThumb {
 		})
 	}
 	return nthumbs
+}
+
+func (e _endpoint) noErrorPixelURL(event events.Type, status uint8, item adtype.ResponserItem, response adtype.Responser, js bool) string {
+	url, _ := e.urlGen.PixelURL(event, status, item, response, js)
+	return url
 }
 
 func noEmptyFieldsMap(m map[string]any) map[string]any {
