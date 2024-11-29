@@ -13,6 +13,7 @@ import (
 	"github.com/valyala/fasthttp"
 
 	"github.com/geniusrabbit/adcorelib/admodels"
+	"github.com/geniusrabbit/adcorelib/admodels/types"
 	"github.com/geniusrabbit/adcorelib/adtype"
 	"github.com/geniusrabbit/adcorelib/eventtraking/events"
 	"github.com/geniusrabbit/adcorelib/httpserver/extensions/endpoint"
@@ -158,6 +159,16 @@ func (e _endpoint) thumbsPrepare(thumbs []admodels.AdAssetThumb) []assetThumb {
 }
 
 func (e _endpoint) noErrorPixelURL(event events.Type, status uint8, item adtype.ResponserItem, response adtype.Responser, js bool) string {
+	if item == nil {
+		formats := response.Request().Formats()
+		item = &adtype.ResponseItemBlank{
+			Imp: &adtype.Impression{Target: &admodels.Zone{}},
+			Src: &adtype.SourceEmpty{},
+			FormatVal: gocast.IfThenExec(len(formats) > 0,
+				func() *types.Format { return formats[0] },
+				func() *types.Format { return &types.Format{} }),
+		}
+	}
 	url, _ := e.urlGen.PixelURL(event, status, item, response, js)
 	return url
 }
