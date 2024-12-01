@@ -84,6 +84,9 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Responser) e
 			if links := item.ViewTrackerLinks(); len(links) > 0 {
 				trackerBlock.Views = append(trackerBlock.Views, links...)
 			}
+			if links := item.ImpressionTrackerLinks(); len(links) > 0 {
+				trackerBlock.Impressions = append(trackerBlock.Impressions, links...)
+			}
 		}
 
 		// Process assets if provided

@@ -4,7 +4,7 @@ go 1.23
 
 require (
 	github.com/demdxx/gocast/v2 v2.9.0
-	github.com/geniusrabbit/adcorelib v0.0.0-20241129152524-80287e0a976e
+	github.com/geniusrabbit/adcorelib v0.0.0-20241201164846-dd42d9d96fd8
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/valyala/fasthttp v1.57.0
 	github.com/valyala/quicktemplate v1.8.0
