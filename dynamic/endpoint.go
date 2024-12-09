@@ -123,7 +123,24 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Responser) e
 			Fields:     noEmptyFieldsMap(aditm.ContentFields()),
 			Assets:     assets,
 			Tracker:    trackerBlock,
-			Debug:      gocast.IfThen(response.Request().Debug, ad, nil),
+			Debug: gocast.IfThenExec(response.Request().Debug,
+				func() any {
+					headers := map[string]string{}
+					ctx.Request.Header.VisitAll(func(key, value []byte) {
+						headers[string(key)] = string(value)
+					})
+					return map[string]any{
+						"http": map[string]any{
+							"uri":     string(ctx.RequestURI()),
+							"ip":      string(ctx.RemoteIP()),
+							"method":  string(ctx.Method()),
+							"query":   ctx.QueryArgs().String(),
+							"headers": headers,
+						},
+						"unit": ad,
+					}
+				},
+				func() any { return nil }),
 		})
 	}
 
