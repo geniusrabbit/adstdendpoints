@@ -39,8 +39,9 @@ type item struct {
 
 //easyjson:json
 type group struct {
-	ID    string  `json:"id"`
-	Items []*item `json:"items"`
+	ID            string  `json:"id"`
+	CustomTracker tracker `json:"custom_tracker,omitempty"`
+	Items         []*item `json:"items"`
 }
 
 func (g *group) addItem(i *item) *group {
@@ -55,6 +56,7 @@ type Response struct {
 	Version       string   `json:"version"`
 	CustomTracker tracker  `json:"custom_tracker,omitempty"`
 	Groups        []*group `json:"groups,omitempty"`
+	Debug         any      `json:"debug,omitempty"`
 }
 
 func (r *Response) getGroupOrCreate(groupID string) *group {

@@ -1,6 +1,6 @@
 //
-// @project GeniusRabbit adstdendpoints 2018 - 2024
-// @author Dmitry Ponomarev <demdxx@gmail.com> 2018 - 2024
+// @project GeniusRabbit adstdendpoints 2018 - 2025
+// @author Dmitry Ponomarev <demdxx@gmail.com> 2018 - 2025
 //
 
 package dynamic
@@ -19,22 +19,26 @@ import (
 	"github.com/geniusrabbit/adcorelib/httpserver/extensions/endpoint"
 )
 
+// Endpoint is a dynamic endpoint
 type _endpoint struct {
 	urlGen adtype.URLGenerator
 }
 
+// New creates new dynamic endpoint
 func New(urlGen adtype.URLGenerator) *_endpoint {
 	return &_endpoint{urlGen: urlGen}
 }
 
+// Codename of the endpoint
 func (e *_endpoint) Codename() string {
 	return "dynamic"
 }
 
+// Handle request of the dynamic Ad and return response
 func (e _endpoint) Handle(source endpoint.Source, request *adtype.BidRequest) (response adtype.Responser) {
 	if request.IsRobot() {
 		response = adtype.NewEmptyResponse(request, nil, nil)
-		e.renderEmpty(request.RequestCtx, response)
+		_ = e.renderEmpty(request.RequestCtx, response)
 	} else {
 		response = source.Bid(request)
 		if err := e.render(request.RequestCtx, response); err != nil {
@@ -45,19 +49,22 @@ func (e _endpoint) Handle(source endpoint.Source, request *adtype.BidRequest) (r
 }
 
 func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Responser) error {
-	resp := Response{
-		Version: "1",
-		CustomTracker: tracker{
-			Impressions: []string{
-				e.noErrorPixelURL(events.Impression, events.StatusCustom, nil, response, false),
+	resp := Response{Version: "1"}
+
+	if response.Request().Debug {
+		headers := map[string]string{}
+		ctx.Request.Header.VisitAll(func(key, value []byte) {
+			headers[string(key)] = string(value)
+		})
+		resp.Debug = map[string]any{
+			"http": map[string]any{
+				"uri":     string(ctx.RequestURI()),
+				"ip":      string(ctx.RemoteIP()),
+				"method":  string(ctx.Method()),
+				"query":   ctx.QueryArgs().String(),
+				"headers": headers,
 			},
-			Views: []string{
-				e.noErrorPixelURL(events.View, events.StatusCustom, nil, response, false),
-			},
-			Clicks: []string{
-				e.noErrorPixelURL(events.Click, events.StatusCustom, nil, response, false),
-			},
-		},
+		}
 	}
 
 	// Process response ad items
@@ -76,10 +83,10 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Responser) e
 
 		trackerBlock = tracker{
 			Impressions: []string{
-				e.noErrorPixelURL(events.Impression, events.StatusSuccess, aditm, response, false),
+				e.noErrorPixelURL(events.Impression, events.StatusSuccess, aditm.Impression(), aditm, response, false),
 			},
 			Views: []string{
-				e.noErrorPixelURL(events.View, events.StatusSuccess, aditm, response, false),
+				e.noErrorPixelURL(events.View, events.StatusSuccess, aditm.Impression(), aditm, response, false),
 			},
 		}
 
@@ -129,24 +136,29 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Responser) e
 			Assets:     assets,
 			Tracker:    trackerBlock,
 			Debug: gocast.IfThenExec(response.Request().Debug,
-				func() any {
-					headers := map[string]string{}
-					ctx.Request.Header.VisitAll(func(key, value []byte) {
-						headers[string(key)] = string(value)
-					})
-					return map[string]any{
-						"http": map[string]any{
-							"uri":     string(ctx.RequestURI()),
-							"ip":      string(ctx.RemoteIP()),
-							"method":  string(ctx.Method()),
-							"query":   ctx.QueryArgs().String(),
-							"headers": headers,
-						},
-						"unit": ad,
-					}
-				},
+				func() any { return map[string]any{"adUnit": ad} },
 				func() any { return nil }),
 		})
+	}
+
+	// Add empty group tracking if no items
+	req := response.Request()
+	for i := range req.Imps {
+		imp := &req.Imps[i]
+		group := resp.getGroupOrCreate(imp.ID)
+		if len(group.Items) == 0 {
+			group.CustomTracker = tracker{
+				Impressions: []string{
+					e.noErrorPixelURL(events.Impression, events.StatusCustom, imp, nil, response, false),
+				},
+				Views: []string{
+					e.noErrorPixelURL(events.View, events.StatusCustom, imp, nil, response, false),
+				},
+				Clicks: []string{
+					e.noErrorPixelURL(events.Click, events.StatusCustom, imp, nil, response, false),
+				},
+			}
+		}
 	}
 
 	// Render response to the client as JSONP
@@ -171,19 +183,26 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Responser) e
 }
 
 func (e _endpoint) renderEmpty(ctx *fasthttp.RequestCtx, response adtype.Responser) error {
-	resp := Response{
-		Version: "1",
-		CustomTracker: tracker{
-			Impressions: []string{
-				e.noErrorPixelURL(events.Impression, events.StatusCustom, nil, response, false),
-			},
-			Views: []string{
-				e.noErrorPixelURL(events.View, events.StatusCustom, nil, response, false),
-			},
-			Clicks: []string{
-				e.noErrorPixelURL(events.Click, events.StatusCustom, nil, response, false),
-			},
-		},
+	resp := Response{Version: "1"}
+
+	// Add empty group tracking
+	req := response.Request()
+	for i := range req.Imps {
+		imp := &req.Imps[i]
+		group := resp.getGroupOrCreate(imp.ID)
+		if len(group.Items) == 0 {
+			group.CustomTracker = tracker{
+				Impressions: []string{
+					e.noErrorPixelURL(events.Impression, events.StatusCustom, imp, nil, response, false),
+				},
+				Views: []string{
+					e.noErrorPixelURL(events.View, events.StatusCustom, imp, nil, response, false),
+				},
+				Clicks: []string{
+					e.noErrorPixelURL(events.Click, events.StatusCustom, imp, nil, response, false),
+				},
+			}
+		}
 	}
 
 	ctx.SetStatusCode(fasthttp.StatusOK)
@@ -204,11 +223,14 @@ func (e _endpoint) thumbsPrepare(thumbs []admodels.AdAssetThumb) []assetThumb {
 	return nthumbs
 }
 
-func (e _endpoint) noErrorPixelURL(event events.Type, status uint8, item adtype.ResponserItem, response adtype.Responser, js bool) string {
+func (e _endpoint) noErrorPixelURL(event events.Type, status uint8, imp *adtype.Impression, item adtype.ResponserItem, response adtype.Responser, js bool) string {
 	if item == nil {
+		if imp == nil {
+			imp = &adtype.Impression{Target: &admodels.Zone{}}
+		}
 		formats := response.Request().Formats()
 		item = &adtype.ResponseItemBlank{
-			Imp: &adtype.Impression{Target: &admodels.Zone{}},
+			Imp: imp,
 			Src: &adtype.SourceEmpty{},
 			FormatVal: gocast.IfThenExec(len(formats) > 0,
 				func() *types.Format { return formats[0] },
