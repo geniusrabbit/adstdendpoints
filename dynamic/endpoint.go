@@ -31,10 +31,15 @@ func (e *_endpoint) Codename() string {
 	return "dynamic"
 }
 
-func (e _endpoint) Handle(source endpoint.Source, request *adtype.BidRequest) adtype.Responser {
-	response := source.Bid(request)
-	if err := e.render(request.RequestCtx, response); err != nil {
-		response = adtype.NewErrorResponse(request, err)
+func (e _endpoint) Handle(source endpoint.Source, request *adtype.BidRequest) (response adtype.Responser) {
+	if request.IsRobot() {
+		response = adtype.NewEmptyResponse(request, nil, nil)
+		e.renderEmpty(request.RequestCtx, response)
+	} else {
+		response = source.Bid(request)
+		if err := e.render(request.RequestCtx, response); err != nil {
+			response = adtype.NewErrorResponse(request, err)
+		}
 	}
 	return response
 }
@@ -160,6 +165,27 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Responser) e
 	}
 
 	// Default JSON response
+	ctx.SetStatusCode(fasthttp.StatusOK)
+	ctx.SetContentType("application/json")
+	return json.NewEncoder(ctx).Encode(resp)
+}
+
+func (e _endpoint) renderEmpty(ctx *fasthttp.RequestCtx, response adtype.Responser) error {
+	resp := Response{
+		Version: "1",
+		CustomTracker: tracker{
+			Impressions: []string{
+				e.noErrorPixelURL(events.Impression, events.StatusCustom, nil, response, false),
+			},
+			Views: []string{
+				e.noErrorPixelURL(events.View, events.StatusCustom, nil, response, false),
+			},
+			Clicks: []string{
+				e.noErrorPixelURL(events.Click, events.StatusCustom, nil, response, false),
+			},
+		},
+	}
+
 	ctx.SetStatusCode(fasthttp.StatusOK)
 	ctx.SetContentType("application/json")
 	return json.NewEncoder(ctx).Encode(resp)
