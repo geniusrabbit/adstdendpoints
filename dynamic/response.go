@@ -3,8 +3,8 @@ package dynamic
 //easyjson:json
 type tracker struct {
 	Clicks      []string `json:"clicks,omitempty"`
-	Impressions []string `json:"impressions"`
-	Views       []string `json:"views"`
+	Impressions []string `json:"impressions,omitempty"`
+	Views       []string `json:"views,omitempty"`
 }
 
 type assetThumb struct {
