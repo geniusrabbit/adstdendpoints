@@ -146,6 +146,32 @@ func do() {
 
 This example initializes a Response, creates a new group or retrieves an existing one, and adds an item with tracking information.
 
+## Request Parameters
+
+The API accepts the following GET parameters to customize the response:
+
+| Parameter  | Type     | Description |
+|------------|----------|-------------|
+| `debug`    | `bool`   | Enables debug mode if set to `true`. |
+| `x`        | `int`    | Optional coordinate X for positioning or targeting logic. |
+| `y`        | `int`    | Optional coordinate Y for positioning or targeting logic. |
+| `w`        | `int`    | Desired maximum width of the asset. |
+| `h`        | `int`    | Desired maximum height of the asset. |
+| `mw`       | `int`    | Minimum width constraint. |
+| `mh`       | `int`    | Minimum height constraint. |
+| `fmt`      | `string` | Alternative shorthand for specifying size, e.g. `300x250`. Can override `w` and `h`. |
+| `width`    | `int`    | Minimum required width (alias for `mw`). |
+| `height`   | `int`    | Minimum required height (alias for `mh`). |
+| `format`   | `string` | Comma-separated list of format codes. Accepts `auto`, `all`, or specific formats. |
+| `type`     | `string` | Comma-separated list of format types. Accepts `auto`, `all`, or specific types. |
+| `keywords` | `string` | Comma-separated keywords to match content. Aliases: `keyword`, `kw`. |
+| `count`    | `int`    | Desired number of items in the response. |
+| `subid1`   | `string` | Custom tracking ID. Aliases: `subid`, `s1`. |
+| `subid2`   | `string` | Additional tracking ID. Alias: `s2`. |
+| `subid3`   | `string` | Additional tracking ID. Alias: `s3`. |
+| `subid4`   | `string` | Additional tracking ID. Alias: `s4`. |
+| `subid5`   | `string` | Additional tracking ID. Alias: `s5`. |
+
 ## API Interaction Example
 
 This section demonstrates how to interact with the system using a curl request and the corresponding JSON response format.
@@ -155,7 +181,7 @@ This section demonstrates how to interact with the system using a curl request a
 To retrieve the response data, use the following curl command. Note that since it’s a GET request, no request body is needed.
 
 ```sh
-curl -X GET http://localhost:8080/api/response \
+curl -X GET 'http://localhost:8080/api/response?format=auto&type=banner&w=100&h=50' \
      -H "Accept: application/json"
 ```
 
