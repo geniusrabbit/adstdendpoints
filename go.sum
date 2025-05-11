@@ -27,8 +27,8 @@ github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHk
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
 github.com/fsnotify/fsnotify v1.9.0 h1:2Ml+OJNzbYCTzsxtv8vKSFD9PbJjmhYF14k/jKC7S9k=
 github.com/fsnotify/fsnotify v1.9.0/go.mod h1:8jBTzvmWwFyi3Pb8djgCCO5IBqzKJ/Jwo8TRcHyHii0=
-github.com/geniusrabbit/adcorelib v0.0.0-20250509125613-907ae083d67c h1:20e6uBR+8AqrTWBGKYUBHvyGYxNhQRLgNvtlZB8qC8M=
-github.com/geniusrabbit/adcorelib v0.0.0-20250509125613-907ae083d67c/go.mod h1:z2tM18xPEmHpAjrPylIoYEfHZigXqH/EZ/docOLWSVU=
+github.com/geniusrabbit/adcorelib v0.0.0-20250511143814-ee19cdcc62f3 h1:dADwvSZfRo/sSmEXGn7GNDRo63IEMwI29ZfiHW2N/aI=
+github.com/geniusrabbit/adcorelib v0.0.0-20250511143814-ee19cdcc62f3/go.mod h1:z2tM18xPEmHpAjrPylIoYEfHZigXqH/EZ/docOLWSVU=
 github.com/geniusrabbit/gogeo v0.0.0-20190430153311-59b5dca35b92 h1:4zzWLdGtzQxDg6WcFpSzcfEBct6xBmGk7T26I1IlNt8=
 github.com/geniusrabbit/gogeo v0.0.0-20190430153311-59b5dca35b92/go.mod h1:z4vtbN4gpN4C/6fEN0gtAc9RBkqU94Y5SrVdk3xMplM=
 github.com/geniusrabbit/gosql/v2 v2.3.1 h1:pXipcITnQlOtpNmGL9gvbrAcNw/PXmcq2Z4hTQv8aEE=
@@ -37,8 +37,8 @@ github.com/geniusrabbit/hourstable v0.0.0-20190430155716-2ecc19b9622f h1:mbMOz/g
 github.com/geniusrabbit/hourstable v0.0.0-20190430155716-2ecc19b9622f/go.mod h1:cHgmYvQ2zN/4FrkDwWNvGkSHkfKUeFqfLI+DYPTM420=
 github.com/geniusrabbit/notificationcenter/v2 v2.4.0 h1:wjxHwVUWjY3YhzRUh663sxiMJ33sReVuj4CeO1M3rsA=
 github.com/geniusrabbit/notificationcenter/v2 v2.4.0/go.mod h1:xi09byY7s5OtLeTKbyX3IVtwKydHYNVsJYfiSFP/Yq4=
-github.com/geniusrabbit/udetect v0.0.0-20250425134628-4a4f1fa5c991 h1:Yv+vaKGNbAYH9L5IS3eG3ziFwR3OIA1dtOFx+mdHr+Q=
-github.com/geniusrabbit/udetect v0.0.0-20250425134628-4a4f1fa5c991/go.mod h1:Rs8x2pSdTvRRcN3C/b1RoMJuUt6kfYXeiE5ori8MBrY=
+github.com/geniusrabbit/udetect v0.0.0-20250511143927-35a146c11d35 h1:Avav44pCedOXO5XfWQGFcYj+NPL9m1nqcurEeUF2MUE=
+github.com/geniusrabbit/udetect v0.0.0-20250511143927-35a146c11d35/go.mod h1:pBQSN0BI4Uy+Ul0MmBjY8BvIdD9DdQ4dh+tJU//gJ+M=
 github.com/go-logr/logr v1.4.2 h1:6pFjapn8bFcIbiKo3XT4j/BhANplGihG6tvd+8rYgrY=
 github.com/go-logr/logr v1.4.2/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
 github.com/go-logr/stdr v1.2.2 h1:hSWxHoqTgW2S2qGc0LTAI563KZ5YKYRhT3MFKZMbjag=

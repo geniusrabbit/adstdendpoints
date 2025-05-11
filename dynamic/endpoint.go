@@ -14,6 +14,7 @@ import (
 
 	"github.com/geniusrabbit/adcorelib/admodels"
 	"github.com/geniusrabbit/adcorelib/admodels/types"
+	"github.com/geniusrabbit/adcorelib/adquery/bidresponse"
 	"github.com/geniusrabbit/adcorelib/adtype"
 	"github.com/geniusrabbit/adcorelib/eventtraking/events"
 	"github.com/geniusrabbit/adcorelib/httpserver/extensions/endpoint"
@@ -37,7 +38,7 @@ func (e *_endpoint) Codename() string {
 // Handle request of the dynamic Ad and return response
 func (e _endpoint) Handle(source endpoint.Source, request *adtype.BidRequest) (response adtype.Responser) {
 	if request.IsRobot() {
-		response = adtype.NewEmptyResponse(request, nil, nil)
+		response = bidresponse.NewEmptyResponse(request, nil, nil)
 		_ = e.renderEmpty(request.RequestCtx, response)
 	} else {
 		response = source.Bid(request)
@@ -226,10 +227,10 @@ func (e _endpoint) thumbsPrepare(thumbs []admodels.AdAssetThumb) []assetThumb {
 func (e _endpoint) noErrorPixelURL(event events.Type, status uint8, imp *adtype.Impression, item adtype.ResponserItem, response adtype.Responser, js bool) string {
 	if item == nil {
 		if imp == nil {
-			imp = &adtype.Impression{Target: &admodels.Zone{}}
+			imp = &adtype.Impression{Target: &adtype.TargetEmpty{}}
 		}
 		formats := response.Request().Formats()
-		item = &adtype.ResponseItemBlank{
+		item = &bidresponse.ResponseItemBlank{
 			Imp: imp,
 			Src: &adtype.SourceEmpty{},
 			FormatVal: gocast.IfThenExec(len(formats) > 0,
