@@ -9,10 +9,9 @@ import (
 	"github.com/demdxx/gocast/v2"
 
 	"github.com/geniusrabbit/adcorelib/adtype"
-)
 
 //line private/templates/ad_native.qtpl:9
-import (
+
 	qtio422016 "io"
 
 	qt422016 "github.com/valyala/quicktemplate"
@@ -157,7 +156,7 @@ func streamadRenderNative(qw422016 *qt422016.Writer, resp adtype.Responser, it a
 //line private/templates/ad_native.qtpl:45
 				qw422016.N().S(`">`)
 //line private/templates/ad_native.qtpl:46
-				qw422016.N().S(gocast.ToString(vl))
+				qw422016.N().S(gocast.Str(vl))
 //line private/templates/ad_native.qtpl:46
 				qw422016.N().S(`</a>`)
 //line private/templates/ad_native.qtpl:48
