@@ -1,7 +1,7 @@
 package direct
 
 type debugResponse struct {
-	ID                uint64 `json:"id,omitempty"`
+	ID                string `json:"id,omitempty"`
 	ZoneID            uint64 `json:"zone_id,omitempty"`
 	AuctionID         string `json:"auction_id,omitempty"`
 	ImpressionID      string `json:"impression_id,omitempty"`

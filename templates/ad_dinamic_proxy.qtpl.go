@@ -6,11 +6,11 @@ package templates
 
 //line private/templates/ad_dinamic_proxy.qtpl:2
 import (
+	"github.com/geniusrabbit/adcorelib/adquery/bidrequest"
 	"github.com/geniusrabbit/adcorelib/adtype"
-)
 
 //line private/templates/ad_dinamic_proxy.qtpl:7
-import (
+
 	qtio422016 "io"
 
 	qt422016 "github.com/valyala/quicktemplate"
@@ -23,7 +23,7 @@ var (
 )
 
 //line private/templates/ad_dinamic_proxy.qtpl:7
-func StreamAdRenderDinamicProxyBanner(qw422016 *qt422016.Writer, request *adtype.BidRequest) {
+func StreamAdRenderDinamicProxyBanner(qw422016 *qt422016.Writer, request adtype.BidRequester) {
 //line private/templates/ad_dinamic_proxy.qtpl:8
 	streamadHeader(qw422016)
 //line private/templates/ad_dinamic_proxy.qtpl:9
@@ -69,7 +69,7 @@ func StreamAdRenderDinamicProxyBanner(qw422016 *qt422016.Writer, request *adtype
 }
 
 //line private/templates/ad_dinamic_proxy.qtpl:31
-func WriteAdRenderDinamicProxyBanner(qq422016 qtio422016.Writer, request *adtype.BidRequest) {
+func WriteAdRenderDinamicProxyBanner(qq422016 qtio422016.Writer, request adtype.BidRequester) {
 //line private/templates/ad_dinamic_proxy.qtpl:31
 	qw422016 := qt422016.AcquireWriter(qq422016)
 //line private/templates/ad_dinamic_proxy.qtpl:31
@@ -80,7 +80,7 @@ func WriteAdRenderDinamicProxyBanner(qq422016 qtio422016.Writer, request *adtype
 }
 
 //line private/templates/ad_dinamic_proxy.qtpl:31
-func AdRenderDinamicProxyBanner(request *adtype.BidRequest) string {
+func AdRenderDinamicProxyBanner(request *bidrequest.BidRequest) string {
 //line private/templates/ad_dinamic_proxy.qtpl:31
 	qb422016 := qt422016.AcquireByteBuffer()
 //line private/templates/ad_dinamic_proxy.qtpl:31

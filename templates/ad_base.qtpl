@@ -51,7 +51,7 @@ function e(u, st) {
 Generate pixel base code
 {% func adPixel(adID, spotID, campID int, tag string) %}{% collapsespace %}{% stripspace %}
   <script type="text/javascript">
-		function u{%d adID %}(st){}
+		function u{%s= adID %}(st){}
   </script>
 {% endstripspace %}{% endcollapsespace %}{% endfunc %}
 
@@ -62,8 +62,8 @@ Generate pixel base code for adresult item
   <script type="text/javascript">
     {%code var u, _ = URLGen.PixelURL(events.Impression, events.StatusSuccess, ad, resp, false)  %}
     {%code var v, _ = URLGen.PixelURL(events.View, events.StatusSuccess, ad, resp, false)  %}
-    function u{%d int(ad.AdID()) %}(st){e('{%s= u %}',st)}
-    function v{%d int(ad.AdID()) %}(st){e('{%s= v %}',st)}
+    function u{%s= ad.AdID() %}(st){e('{%s= u %}',st)}
+    function v{%s= ad.AdID() %}(st){e('{%s= v %}',st)}
   </script>
   {% endif %}
 {% endstripspace %}{% endcollapsespace %}{% endfunc %}

@@ -1,6 +1,6 @@
 //
-// @project GeniusRabbit sspserver 2018 - 2019
-// @author Dmitry Ponomarev <demdxx@gmail.com> 2018 - 2019
+// @project GeniusRabbit sspserver 2018 - 2019, 2025
+// @author Dmitry Ponomarev <demdxx@gmail.com> 2018 - 2019, 2025
 //
 
 package direct
@@ -45,25 +45,26 @@ func (e *_endpoint) Codename() string {
 	return "direct"
 }
 
-func (e *_endpoint) Handle(source adstdendpoints.Source, request *adtype.BidRequest) adtype.Responser {
+// Handle processes the bid request and sends the appropriate direct response.
+func (e *_endpoint) Handle(source adstdendpoints.Source, request adtype.BidRequester) adtype.Response {
 	request.ImpressionUpdate(func(imp *adtype.Impression) bool {
 		imp.Width, imp.Height = -1, -1
 		imp.FormatTypes.Reset().Set(types.FormatDirectType)
 		return true
 	})
-	request.Init(e.formats)
-	response := source.Bid(request)
-	if err := e.execDirect(request.RequestCtx, response); err != nil {
-		ctxlogger.Get(request.Ctx).Error("exec direct", zap.Error(err))
+	newRequest := request.WithFormats(e.formats)
+	response := source.Bid(newRequest)
+	if err := e.execDirect(newRequest.HTTPRequest(), response); err != nil {
+		ctxlogger.Get(newRequest.Context()).Error("exec direct", zap.Error(err))
 	} else {
 		e.sendViewEvent(response)
 	}
 	return response
 }
 
-func (e *_endpoint) execDirect(req *fasthttp.RequestCtx, response adtype.Responser) (err error) {
+func (e *_endpoint) execDirect(req *fasthttp.RequestCtx, response adtype.Response) (err error) {
 	var (
-		id              uint64
+		id              string
 		zoneID          uint64
 		impID           string
 		link            string
@@ -77,7 +78,7 @@ func (e *_endpoint) execDirect(req *fasthttp.RequestCtx, response adtype.Respons
 
 	if response == nil || response.Count() == 0 {
 		if response != nil {
-			if imps := response.Request().Imps; len(imps) > 0 {
+			if imps := response.Request().Impressions(); len(imps) > 0 {
 				impID = imps[0].ID
 				if imps[0].Target != nil {
 					link = imps[0].Target.AlternativeAdCode("direct")
@@ -97,14 +98,14 @@ func (e *_endpoint) execDirect(req *fasthttp.RequestCtx, response adtype.Respons
 			}
 
 			switch ad := adv.(type) {
-			case adtype.ResponserItem:
+			case adtype.ResponseItem:
 				id = ad.AdID()
 				if !ad.IsDirect() {
 					err = ErrInvalidResponseType
 				} else {
 					link = adtype.PrepareURL(ad.ActionURL(), response, ad)
 				}
-			case adtype.ResponserMultipleItem:
+			case adtype.ResponseMultipleItem:
 				err = ErrMultipleDirectNotSupported
 			default:
 				// ...
@@ -113,14 +114,14 @@ func (e *_endpoint) execDirect(req *fasthttp.RequestCtx, response adtype.Respons
 	}
 
 	switch {
-	case response != nil && response.Request().Debug && req.QueryArgs().Has("noredirect"):
+	case response != nil && response.Request().IsDebug() && req.QueryArgs().Has("noredirect"):
 		req.SetStatusCode(http.StatusOK)
 		req.SetContentType("application/json")
 		_ = json.NewEncoder(req).Encode(debugResponse{
 			ID:                id,
 			ZoneID:            zoneID,
 			ImpressionID:      impID,
-			AuctionID:         response.Request().ID,
+			AuctionID:         response.Request().AuctionID(),
 			IsAlternativeLink: alternativeLink,
 			Link:              link,
 			Superfailover:     e.superFailoverURL,
@@ -139,12 +140,13 @@ func (e *_endpoint) execDirect(req *fasthttp.RequestCtx, response adtype.Respons
 	return err
 }
 
-func (e *_endpoint) sendViewEvent(response adtype.Responser) {
+func (e *_endpoint) sendViewEvent(response adtype.Response) {
 	if response == nil || response.Error() != nil || len(response.Ads()) == 0 {
 		return
 	}
-	if response.Request().Debug && response.Request().RequestCtx.QueryArgs().Has("noredirect") {
-		ctxlogger.Get(response.Context()).Info("skip event log", zap.String("request_id", response.Request().ID))
+	if response.Request().IsDebug() && response.Request().HTTPRequest().QueryArgs().Has("noredirect") {
+		ctxlogger.Get(response.Context()).Info("skip event log",
+			zap.String("request_id", response.Request().ID()))
 		return
 	}
 	var (
@@ -153,9 +155,9 @@ func (e *_endpoint) sendViewEvent(response adtype.Responser) {
 	)
 
 	switch ad := response.Ads()[0].(type) {
-	case adtype.ResponserItem:
+	case adtype.ResponseItem:
 		err = stream.Send(events.Direct, events.StatusSuccess, response, ad)
-	case adtype.ResponserMultipleItem:
+	case adtype.ResponseMultipleItem:
 		if len(ad.Ads()) > 0 {
 			err = stream.Send(events.Direct, events.StatusSuccess, response, ad.Ads()[0])
 		}

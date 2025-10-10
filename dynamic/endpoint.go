@@ -36,27 +36,27 @@ func (e *_endpoint) Codename() string {
 }
 
 // Handle request of the dynamic Ad and return response
-func (e _endpoint) Handle(source endpoint.Source, request *adtype.BidRequest) (response adtype.Responser) {
+func (e _endpoint) Handle(source endpoint.Source, request adtype.BidRequester) (response adtype.Response) {
 	if request.IsRobot() {
 		response = bidresponse.NewEmptyResponse(request, nil, nil)
-		_ = e.renderEmpty(request.RequestCtx, response)
+		_ = e.renderEmpty(request.HTTPRequest(), response)
 	} else {
 		response = source.Bid(request)
-		if err := e.render(request.RequestCtx, response); err != nil {
+		if err := e.render(request.HTTPRequest(), response); err != nil {
 			response = adtype.NewErrorResponse(request, err)
 		}
 	}
 	return response
 }
 
-func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Responser) error {
+func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) error {
 	resp := Response{Version: "1"}
 
-	if response.Request().Debug {
+	if response.Request().IsDebug() {
 		headers := map[string]string{}
-		ctx.Request.Header.VisitAll(func(key, value []byte) {
+		for key, value := range ctx.Request.Header.All() {
 			headers[string(key)] = string(value)
-		})
+		}
 		resp.Debug = map[string]any{
 			"http": map[string]any{
 				"uri":     string(ctx.RequestURI()),
@@ -72,7 +72,7 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Responser) e
 	for _, ad := range response.Ads() {
 		var (
 			assets       []asset
-			aditm        = ad.(adtype.ResponserItem)
+			aditm        = ad.(adtype.ResponseItem)
 			url          string
 			trackerBlock tracker
 		)
@@ -92,7 +92,7 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Responser) e
 		}
 
 		// Third-party trackers pixels
-		if item, _ := ad.(adtype.ResponserItem); item != nil {
+		if item, _ := ad.(adtype.ResponseItem); item != nil {
 			trackerBlock.Clicks = item.ClickTrackerLinks()
 			if links := item.ViewTrackerLinks(); len(links) > 0 {
 				trackerBlock.Views = append(trackerBlock.Views, links...)
@@ -110,7 +110,7 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Responser) e
 				if idx, ok := processed[as.Name]; !ok || rand.Float64() > 0.5 {
 					nas := asset{
 						Name:   as.Name,
-						Path:   e.urlGen.CDNURL(as.Path),
+						Path:   e.urlGen.CDNURL(as.URL),
 						Type:   as.Type.Code(),
 						Width:  as.Width,
 						Height: as.Height,
@@ -136,7 +136,7 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Responser) e
 			Fields:     noEmptyFieldsMap(aditm.ContentFields()),
 			Assets:     assets,
 			Tracker:    trackerBlock,
-			Debug: gocast.IfThenExec(response.Request().Debug,
+			Debug: gocast.IfThenExec(response.Request().IsDebug(),
 				func() any { return map[string]any{"adUnit": ad} },
 				func() any { return nil }),
 		})
@@ -144,8 +144,7 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Responser) e
 
 	// Add empty group tracking if no items
 	req := response.Request()
-	for i := range req.Imps {
-		imp := &req.Imps[i]
+	for _, imp := range req.Impressions() {
 		group := resp.getGroupOrCreate(imp.ID)
 		if len(group.Items) == 0 {
 			group.CustomTracker = tracker{
@@ -183,13 +182,12 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Responser) e
 	return json.NewEncoder(ctx).Encode(resp)
 }
 
-func (e _endpoint) renderEmpty(ctx *fasthttp.RequestCtx, response adtype.Responser) error {
+func (e _endpoint) renderEmpty(ctx *fasthttp.RequestCtx, response adtype.Response) error {
 	resp := Response{Version: "1"}
 
 	// Add empty group tracking
 	req := response.Request()
-	for i := range req.Imps {
-		imp := &req.Imps[i]
+	for _, imp := range req.Impressions() {
 		group := resp.getGroupOrCreate(imp.ID)
 		if len(group.Items) == 0 {
 			group.CustomTracker = tracker{
@@ -211,11 +209,11 @@ func (e _endpoint) renderEmpty(ctx *fasthttp.RequestCtx, response adtype.Respons
 	return json.NewEncoder(ctx).Encode(resp)
 }
 
-func (e _endpoint) thumbsPrepare(thumbs []admodels.AdAssetThumb) []assetThumb {
+func (e _endpoint) thumbsPrepare(thumbs []admodels.AdFileAssetThumb) []assetThumb {
 	nthumbs := make([]assetThumb, 0, len(thumbs))
 	for _, th := range thumbs {
 		nthumbs = append(nthumbs, assetThumb{
-			Path:   e.urlGen.CDNURL(th.Path),
+			Path:   e.urlGen.CDNURL(th.URL),
 			Type:   th.Type.Code(),
 			Width:  th.Width,
 			Height: th.Height,
@@ -224,12 +222,12 @@ func (e _endpoint) thumbsPrepare(thumbs []admodels.AdAssetThumb) []assetThumb {
 	return nthumbs
 }
 
-func (e _endpoint) noErrorPixelURL(event events.Type, status uint8, imp *adtype.Impression, item adtype.ResponserItem, response adtype.Responser, js bool) string {
+func (e _endpoint) noErrorPixelURL(event events.Type, status uint8, imp *adtype.Impression, item adtype.ResponseItem, response adtype.Response, js bool) string {
 	if item == nil {
 		if imp == nil {
 			imp = &adtype.Impression{Target: &adtype.TargetEmpty{}}
 		}
-		formats := response.Request().Formats()
+		formats := response.Request().Formats().List()
 		item = &bidresponse.ResponseItemBlank{
 			Imp: imp,
 			Src: &adtype.SourceEmpty{},

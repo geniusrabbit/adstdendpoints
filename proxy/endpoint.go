@@ -23,8 +23,8 @@ func (e *_endpoint) Codename() string {
 	return "proxy"
 }
 
-func (e *_endpoint) Handle(source adstdendpoints.Source, request *adtype.BidRequest) adtype.Responser {
-	request.RequestCtx.SetContentType("text/html; charset=UTF-8")
-	templates.WriteAdRenderDinamicProxyBanner(request.RequestCtx, request)
+func (e *_endpoint) Handle(source adstdendpoints.Source, request adtype.BidRequester) adtype.Response {
+	request.HTTPRequest().SetContentType("text/html; charset=UTF-8")
+	templates.WriteAdRenderDinamicProxyBanner(request.HTTPRequest(), request)
 	return nil
 }

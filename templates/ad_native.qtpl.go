@@ -24,7 +24,7 @@ var (
 )
 
 //line private/templates/ad_native.qtpl:9
-func streamadRenderNative(qw422016 *qt422016.Writer, resp adtype.Responser, it adtype.ResponserItem) {
+func streamadRenderNative(qw422016 *qt422016.Writer, resp adtype.Response, it adtype.ResponseItem) {
 //line private/templates/ad_native.qtpl:11
 	urlStr := URLGen.MustClickURL(it, resp)
 	asset := it.MainAsset()
@@ -40,23 +40,23 @@ func streamadRenderNative(qw422016 *qt422016.Writer, resp adtype.Responser, it a
 //line private/templates/ad_native.qtpl:19
 		qw422016.N().S(`<script type="text/javascript">var _qPixel = new Image();_qPixel.onload = function() { u`)
 //line private/templates/ad_native.qtpl:22
-		qw422016.N().D(int(it.AdID()))
+		qw422016.N().S(it.AdID())
 //line private/templates/ad_native.qtpl:22
 		qw422016.N().S(`(1);v`)
 //line private/templates/ad_native.qtpl:22
-		qw422016.N().D(int(it.AdID()))
+		qw422016.N().S(it.AdID())
 //line private/templates/ad_native.qtpl:22
 		qw422016.N().S(`(1); };_qPixel.onerror = function() { u`)
 //line private/templates/ad_native.qtpl:23
-		qw422016.N().D(int(it.AdID()))
+		qw422016.N().S(it.AdID())
 //line private/templates/ad_native.qtpl:23
 		qw422016.N().S(`(0);v`)
 //line private/templates/ad_native.qtpl:23
-		qw422016.N().D(int(it.AdID()))
+		qw422016.N().S(it.AdID())
 //line private/templates/ad_native.qtpl:23
 		qw422016.N().S(`(0); };_qPixel.src = '`)
 //line private/templates/ad_native.qtpl:24
-		qw422016.N().S(asset.Path)
+		qw422016.N().S(asset.URL)
 //line private/templates/ad_native.qtpl:24
 		qw422016.N().S(`';</script><a target="_blank" href="`)
 //line private/templates/ad_native.qtpl:26
@@ -64,7 +64,7 @@ func streamadRenderNative(qw422016 *qt422016.Writer, resp adtype.Responser, it a
 //line private/templates/ad_native.qtpl:26
 		qw422016.N().S(`" class="image" style="background-image: url(`)
 //line private/templates/ad_native.qtpl:26
-		qw422016.N().S(asset.Path)
+		qw422016.N().S(asset.URL)
 //line private/templates/ad_native.qtpl:26
 		qw422016.N().S(`);"></a>`)
 //line private/templates/ad_native.qtpl:27
@@ -76,23 +76,23 @@ func streamadRenderNative(qw422016 *qt422016.Writer, resp adtype.Responser, it a
 //line private/templates/ad_native.qtpl:28
 		qw422016.N().S(`" class="video"><video onload="u`)
 //line private/templates/ad_native.qtpl:28
-		qw422016.N().D(int(it.AdID()))
+		qw422016.N().S(it.AdID())
 //line private/templates/ad_native.qtpl:28
 		qw422016.N().S(`(1);v`)
 //line private/templates/ad_native.qtpl:28
-		qw422016.N().D(int(it.AdID()))
+		qw422016.N().S(it.AdID())
 //line private/templates/ad_native.qtpl:28
 		qw422016.N().S(`(1)"onerror="u`)
 //line private/templates/ad_native.qtpl:29
-		qw422016.N().D(int(it.AdID()))
+		qw422016.N().S(it.AdID())
 //line private/templates/ad_native.qtpl:29
 		qw422016.N().S(`(0);v`)
 //line private/templates/ad_native.qtpl:29
-		qw422016.N().D(int(it.AdID()))
+		qw422016.N().S(it.AdID())
 //line private/templates/ad_native.qtpl:29
 		qw422016.N().S(`(0)"autoplay loop muted><source src="`)
 //line private/templates/ad_native.qtpl:31
-		qw422016.N().S(asset.Path)
+		qw422016.N().S(asset.URL)
 //line private/templates/ad_native.qtpl:31
 		qw422016.N().S(`" type="`)
 //line private/templates/ad_native.qtpl:31
@@ -114,19 +114,11 @@ func streamadRenderNative(qw422016 *qt422016.Writer, resp adtype.Responser, it a
 //line private/templates/ad_native.qtpl:33
 				qw422016.N().S(`<source src="`)
 //line private/templates/ad_native.qtpl:34
-				qw422016.N().S(thumb.Path)
+				qw422016.N().S(thumb.URL)
 //line private/templates/ad_native.qtpl:34
 				qw422016.N().S(`" type="`)
 //line private/templates/ad_native.qtpl:34
-				if thumb.ContentType != "" {
-//line private/templates/ad_native.qtpl:34
-					qw422016.N().S(thumb.ContentType)
-//line private/templates/ad_native.qtpl:34
-				} else {
-//line private/templates/ad_native.qtpl:34
-					qw422016.N().S(`video/mp4`)
-//line private/templates/ad_native.qtpl:34
-				}
+				qw422016.N().S(`video/mp4`)
 //line private/templates/ad_native.qtpl:34
 				qw422016.N().S(`" />`)
 //line private/templates/ad_native.qtpl:35
@@ -171,7 +163,7 @@ func streamadRenderNative(qw422016 *qt422016.Writer, resp adtype.Responser, it a
 }
 
 //line private/templates/ad_native.qtpl:53
-func writeadRenderNative(qq422016 qtio422016.Writer, resp adtype.Responser, it adtype.ResponserItem) {
+func writeadRenderNative(qq422016 qtio422016.Writer, resp adtype.Response, it adtype.ResponseItem) {
 //line private/templates/ad_native.qtpl:53
 	qw422016 := qt422016.AcquireWriter(qq422016)
 //line private/templates/ad_native.qtpl:53
@@ -182,7 +174,7 @@ func writeadRenderNative(qq422016 qtio422016.Writer, resp adtype.Responser, it a
 }
 
 //line private/templates/ad_native.qtpl:53
-func adRenderNative(resp adtype.Responser, it adtype.ResponserItem) string {
+func adRenderNative(resp adtype.Response, it adtype.ResponseItem) string {
 //line private/templates/ad_native.qtpl:53
 	qb422016 := qt422016.AcquireByteBuffer()
 //line private/templates/ad_native.qtpl:53

@@ -4,7 +4,7 @@
   )
 %}
 
-{% func AdRenderDinamicProxyBanner(request *adtype.BidRequest) %}{% collapsespace %}{% stripspace %}
+{% func AdRenderDinamicProxyBanner(request adtype.BidRequester) %}{% collapsespace %}{% stripspace %}
   {%= adHeader() %}
   {%= preloader() %}
   {%= adRenderNativeCSS() %}

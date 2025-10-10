@@ -11,10 +11,9 @@ package templates
 import (
 	"github.com/geniusrabbit/adcorelib/adtype"
 	"github.com/geniusrabbit/adcorelib/eventtraking/events"
-)
 
 //line private/templates/ad_base.qtpl:10
-import (
+
 	qtio422016 "io"
 
 	qt422016 "github.com/valyala/quicktemplate"
@@ -173,7 +172,7 @@ func adPixel(adID, spotID, campID int, tag string) string {
 // Generate pixel base code for adresult item
 
 //line private/templates/ad_base.qtpl:60
-func streamadPixelItem(qw422016 *qt422016.Writer, ad adtype.ResponserItem, resp adtype.Responser) {
+func streamadPixelItem(qw422016 *qt422016.Writer, ad adtype.ResponseItem, resp adtype.Response) {
 //line private/templates/ad_base.qtpl:61
 	if ad != nil && resp != nil {
 //line private/templates/ad_base.qtpl:61
@@ -187,7 +186,7 @@ func streamadPixelItem(qw422016 *qt422016.Writer, ad adtype.ResponserItem, resp 
 //line private/templates/ad_base.qtpl:64
 		qw422016.N().S(`function u`)
 //line private/templates/ad_base.qtpl:65
-		qw422016.N().D(int(ad.AdID()))
+		qw422016.N().S(ad.AdID())
 //line private/templates/ad_base.qtpl:65
 		qw422016.N().S(`(st){e('`)
 //line private/templates/ad_base.qtpl:65
@@ -195,7 +194,7 @@ func streamadPixelItem(qw422016 *qt422016.Writer, ad adtype.ResponserItem, resp 
 //line private/templates/ad_base.qtpl:65
 		qw422016.N().S(`',st)}function v`)
 //line private/templates/ad_base.qtpl:66
-		qw422016.N().D(int(ad.AdID()))
+		qw422016.N().S(ad.AdID())
 //line private/templates/ad_base.qtpl:66
 		qw422016.N().S(`(st){e('`)
 //line private/templates/ad_base.qtpl:66
@@ -208,7 +207,7 @@ func streamadPixelItem(qw422016 *qt422016.Writer, ad adtype.ResponserItem, resp 
 }
 
 //line private/templates/ad_base.qtpl:69
-func writeadPixelItem(qq422016 qtio422016.Writer, ad adtype.ResponserItem, resp adtype.Responser) {
+func writeadPixelItem(qq422016 qtio422016.Writer, ad adtype.ResponseItem, resp adtype.Response) {
 //line private/templates/ad_base.qtpl:69
 	qw422016 := qt422016.AcquireWriter(qq422016)
 //line private/templates/ad_base.qtpl:69
@@ -219,7 +218,7 @@ func writeadPixelItem(qq422016 qtio422016.Writer, ad adtype.ResponserItem, resp 
 }
 
 //line private/templates/ad_base.qtpl:69
-func adPixelItem(ad adtype.ResponserItem, resp adtype.Responser) string {
+func adPixelItem(ad adtype.ResponseItem, resp adtype.Response) string {
 //line private/templates/ad_base.qtpl:69
 	qb422016 := qt422016.AcquireByteBuffer()
 //line private/templates/ad_base.qtpl:69
