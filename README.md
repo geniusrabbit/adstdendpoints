@@ -226,16 +226,16 @@ All endpoints support the following common GET parameters:
               "privacy_url": "https://advertiser.com/ad/privacy",
               "terms_url": "https://advertiser.com/ad/terms"
             },
-            "complaint_url": "https://example.com/complaint",
-            "hide": {
-              "type": "cookie",
-              "hide_ad_url_type": "post",
-              "hide_ad_url": "https://example.com/hide",
-              "hide_ad_url_params": {
-                "ad_id": "456"
+            "items": [
+              {
+                "title": "Report this Ad",
+                "url": "https://api.example.com/complaint?ad=456"
               },
-              "name": "hide_ad_456"
-            }
+              {
+                "title": "About this Ad",
+                "url": "https://api.example.com/about?ad=456"
+              }
+            ]
           },
           "debug": {
             "adUnit": {
@@ -279,6 +279,9 @@ All endpoints support the following common GET parameters:
     - **`assets`**: Media files (images, videos) with metadata
     - **`tracker`**: Item-specific tracking URLs
     - **`meta`**: Compliance and advertiser information
+      - **`advertiser`**: Advertiser details (id, name, URLs)
+      - **`ad`**: Ad campaign information (id, campaign_id, description, etc.)
+      - **`items`**: Menu items for ad actions (Report this Ad, About this Ad)
     - **`debug`**: Debug information (only in debug mode)
 
 #### Proxy Endpoint Response

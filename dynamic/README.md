@@ -27,6 +27,15 @@ The dynamic endpoint serves structured JSON responses optimized for:
 - **Mobile Applications**: App monetization and in-app advertising
 - **Content Recommendation**: Sponsored content and related articles
 
+**Key Features:**
+
+- **Robot Detection**: Automatically detects and handles bot traffic with empty responses
+- **Asset Management**: CDN URL generation for images, videos, and thumbnails
+- **Event Tracking**: Comprehensive impression, view, and click tracking
+- **Meta Information**: Configurable compliance and advertiser information
+- **Debug Support**: Detailed debug information for development and testing
+- **Format Support**: JSONP and JSON response formats
+
 ## Ad Format Types
 
 | Format Type | Description | Use Cases |
@@ -82,7 +91,7 @@ Represents an individual ad unit with content, assets, and tracking.
 **Fields:**
 
 - **`ID`** (`any`): Unique identifier for the ad item
-- **`Type`** (`string`): Ad format type (`native`, `banner`, `video_banner`, etc.)
+- **`Type`** (`string`): Ad format type (`native`, `banner`, `slider_banner`, etc.)
 - **`URL`** (`string`, optional): Click-through destination URL
 - **`Content`** (`string`, optional): Raw HTML/text content for direct rendering (proxy ads only, mutually exclusive with `ContentURL`)
 - **`ContentURL`** (`string`, optional): IFrame URL for proxy content delivery (proxy ads only, mutually exclusive with `Content`)
@@ -97,6 +106,55 @@ Represents an individual ad unit with content, assets, and tracking.
 - **`Tracker`** (`tracker`): Event tracking configuration
 - **`Meta`** (`*itemMetaInfo`, optional): Advertiser and compliance information
 - **`Debug`** (`any`, optional): Debug information (development mode only)
+
+### `itemMetaAdvertiserInfo`
+
+Contains advertiser information for compliance and transparency.
+
+**Fields:**
+
+- **`ID`** (`uint64`, optional): Advertiser identifier
+- **`Name`** (`string`, optional): Advertiser company name
+- **`AboutURL`** (`string`, optional): URL to advertiser information page
+- **`ContactURL`** (`string`, optional): URL to advertiser contact page
+- **`PrivacyURL`** (`string`, optional): URL to advertiser privacy policy
+- **`TermsURL`** (`string`, optional): URL to advertiser terms of service
+
+### `itemMetaAdInfo`
+
+Contains ad campaign information for transparency and compliance.
+
+**Fields:**
+
+- **`ID`** (`uint64`, optional): Ad unit identifier
+- **`CampaignID`** (`uint64`, optional): Campaign identifier
+- **`Description`** (`string`, optional): Ad campaign description
+- **`MinAge`** (`int`, optional): Minimum age requirement for ad content
+- **`AboutURL`** (`string`, optional): URL to ad information page
+- **`ContactURL`** (`string`, optional): URL to ad-specific contact page
+- **`PrivacyURL`** (`string`, optional): URL to ad-specific privacy policy
+- **`TermsURL`** (`string`, optional): URL to ad-specific terms of service
+
+### `itemMetaMenuInfo`
+
+Represents menu items for ad actions (Report this Ad, About this Ad, etc.).
+
+**Fields:**
+
+- **`Title`** (`string`, optional): Display title for the menu item
+- **`URL`** (`string`, optional): URL for the menu action
+
+### `itemMetaInfo`
+
+Contains comprehensive meta information about the ad for compliance and user interaction.
+
+**Fields:**
+
+- **`Advertiser`** (`*itemMetaAdvertiserInfo`, optional): Advertiser details
+- **`Ad`** (`*itemMetaAdInfo`, optional): Ad campaign information
+- **`Items`** (`[]*itemMetaMenuInfo`, optional): Menu items for ad actions
+
+**Usage:** This structure provides transparency information and action menus configured via `MetaConfig`.
 
 ### `group`
 
@@ -118,6 +176,43 @@ Root response object containing all ad groups and global metadata.
 - **`CustomTracker`** (`tracker`, optional): Global tracking applied to all items
 - **`Groups`** (`[]*group`, optional): Array of ad groups
 - **`Debug`** (`any`, optional): Request debug information
+
+### `MetaConfig`
+
+Configuration structure for controlling meta information generation in ad responses.
+
+**Fields:**
+
+- **`ComplaintAdURL`** (`string`): URL for "Report this Ad" menu item
+- **`AboutAdURL`** (`string`): URL for "About this Ad" menu item
+
+**Usage:** This configuration controls which menu items appear in the `itemMetaInfo.Items` array. When configured, these URLs are automatically added to ad responses as menu actions.
+
+**Example Configuration:**
+
+```go
+metaConf := dynamic.MetaConfig{
+    ComplaintAdURL: "https://api.example.com/complaint",
+    AboutAdURL:     "https://api.example.com/about",
+}
+```
+
+**Result in Response:**
+
+```json
+"meta": {
+  "items": [
+    {
+      "title": "Report this Ad",
+      "url": "https://api.example.com/complaint"
+    },
+    {
+      "title": "About this Ad", 
+      "url": "https://api.example.com/about"
+    }
+  ]
+}
+```
 
 ## Ad Format Examples
 
@@ -209,7 +304,17 @@ curl -X GET 'https://api.example.com/dynamic?zone=123&type=native&count=3&keywor
               "id": 789,
               "campaign_id": 101112,
               "description": "Technology innovation campaign"
-            }
+            },
+            "items": [
+              {
+                "title": "Report this Ad",
+                "url": "https://api.sspserver.com/complaint?ad=789"
+              },
+              {
+                "title": "About this Ad",
+                "url": "https://api.sspserver.com/about?ad=789"
+              }
+            ]
           }
         }
       ]
@@ -700,6 +805,43 @@ curl -X GET 'https://api.example.com/dynamic?zone=258&type=proxy&w=320&h=480' \
 }
 ```
 
+## Empty Response Handling
+
+When no ads are available, the dynamic endpoint automatically creates empty groups with tracking information:
+
+```json
+{
+  "version": "1",
+  "groups": [
+    {
+      "id": "impression-id-123",
+      "custom_tracker": {
+        "impressions": [
+          "https://track.sspserver.com/imp?status=custom&impression=123"
+        ],
+        "views": [
+          "https://track.sspserver.com/view?status=custom&impression=123"
+        ],
+        "clicks": [
+          "https://track.sspserver.com/click?status=custom&impression=123"
+        ]
+      },
+      "items": []
+    }
+  ]
+}
+```
+
+This ensures that impression tracking occurs even when no ads are served, maintaining accurate metrics for empty responses.
+
+## Robot Detection
+
+The endpoint automatically detects robot/bot traffic using `request.IsRobot()` and returns empty responses for non-human traffic:
+
+- **Bot Traffic**: Returns empty response with tracking
+- **Human Traffic**: Processes through normal bid flow
+- **Debug Mode**: Bot detection bypassed for testing
+
 ## Integration Examples
 
 ### JavaScript Native Ad Integration
@@ -1071,6 +1213,52 @@ const styles = {
   }
 };
 ```
+
+## URL Generation and Asset Processing
+
+The dynamic endpoint uses a `URLGenerator` interface for creating various types of URLs:
+
+### Click URL Generation
+
+Click URLs are generated only for non-proxy formats:
+
+```go
+if !aditm.Format().IsProxy() {
+    url, _ = e.urlGen.ClickURL(aditm, response)
+}
+```
+
+### CDN URL Processing
+
+All asset URLs are automatically converted to CDN URLs:
+
+```go
+nas := asset{
+    Name:   as.Name,
+    Path:   e.urlGen.CDNURL(as.URL), // Original URL converted to CDN URL
+    // ... other fields
+}
+```
+
+### Tracking Pixel URLs
+
+Tracking pixels are generated with different event types and statuses:
+
+```go
+// Success tracking
+e.urlGen.PixelURL(events.Impression, events.StatusSuccess, item, response, false)
+
+// Custom/empty tracking  
+e.urlGen.PixelURL(events.Impression, events.StatusCustom, item, response, false)
+```
+
+### Asset Deduplication
+
+Assets with the same name are deduplicated with random selection:
+
+- If multiple assets have the same name, one is randomly selected
+- This prevents duplicate assets in the response
+- Maintains response size optimization
 
 ## Request Parameters
 

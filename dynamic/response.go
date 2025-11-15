@@ -58,13 +58,16 @@ type itemMetaInfoHide struct {
 }
 
 //easyjson:json
+type itemMetaMenuInfo struct {
+	Title string `json:"title,omitempty"`
+	URL   string `json:"url,omitempty"`
+}
+
+//easyjson:json
 type itemMetaInfo struct {
 	Advertiser *itemMetaAdvertiserInfo `json:"advertiser,omitempty"`
 	Ad         *itemMetaAdInfo         `json:"ad,omitempty"`
-	// ComplaintURL it's URL where user can send complaint about the Ad
-	ComplaintURL string `json:"complaint_url,omitempty"`
-	// Hide it's info about hiding the Ad
-	Hide *itemMetaInfoHide `json:"hide,omitempty"`
+	Items      []*itemMetaMenuInfo     `json:"items,omitempty"`
 }
 
 //easyjson:json

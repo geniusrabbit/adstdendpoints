@@ -22,12 +22,13 @@ import (
 
 // Endpoint is a dynamic endpoint
 type _endpoint struct {
-	urlGen adtype.URLGenerator
+	urlGen   adtype.URLGenerator
+	metaConf MetaConfig
 }
 
 // New creates new dynamic endpoint
-func New(urlGen adtype.URLGenerator) *_endpoint {
-	return &_endpoint{urlGen: urlGen}
+func New(urlGen adtype.URLGenerator, metaConf MetaConfig) *_endpoint {
+	return &_endpoint{urlGen: urlGen, metaConf: metaConf}
 }
 
 // Codename of the endpoint
@@ -136,6 +137,7 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 			Fields:     noEmptyFieldsMap(aditm.ContentFields()),
 			Assets:     assets,
 			Tracker:    trackerBlock,
+			Meta:       e.prepareItemMeta(ctx, aditm, response),
 			Debug: gocast.IfThenExec(response.Request().IsDebug(),
 				func() any { return map[string]any{"adUnit": ad} },
 				func() any { return nil }),
@@ -180,6 +182,25 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 	ctx.SetStatusCode(fasthttp.StatusOK)
 	ctx.SetContentType("application/json")
 	return json.NewEncoder(ctx).Encode(resp)
+}
+
+func (e _endpoint) prepareItemMeta(ctx *fasthttp.RequestCtx, item adtype.ResponseItem, response adtype.Response) *itemMetaInfo {
+	meta := &itemMetaInfo{
+		Items: []*itemMetaMenuInfo{},
+	}
+	if e.metaConf.ComplaintAdURL != "" {
+		meta.Items = append(meta.Items, &itemMetaMenuInfo{
+			Title: "Report this Ad",
+			URL:   e.metaConf.ComplaintAdURL,
+		})
+	}
+	if e.metaConf.AboutAdURL != "" {
+		meta.Items = append(meta.Items, &itemMetaMenuInfo{
+			Title: "About this Ad",
+			URL:   e.metaConf.AboutAdURL,
+		})
+	}
+	return meta
 }
 
 func (e _endpoint) renderEmpty(ctx *fasthttp.RequestCtx, response adtype.Response) error {
