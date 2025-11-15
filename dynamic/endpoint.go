@@ -8,6 +8,7 @@ package dynamic
 import (
 	"encoding/json"
 	"math/rand"
+	"strings"
 
 	"github.com/demdxx/gocast/v2"
 	"github.com/valyala/fasthttp"
@@ -137,7 +138,7 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 			Fields:     noEmptyFieldsMap(aditm.ContentFields()),
 			Assets:     assets,
 			Tracker:    trackerBlock,
-			Meta:       e.prepareItemMeta(ctx, aditm, response),
+			Meta:       e.prepareItemMeta(aditm, response),
 			Debug: gocast.IfThenExec(response.Request().IsDebug(),
 				func() any { return map[string]any{"adUnit": ad} },
 				func() any { return nil }),
@@ -184,21 +185,34 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 	return json.NewEncoder(ctx).Encode(resp)
 }
 
-func (e _endpoint) prepareItemMeta(ctx *fasthttp.RequestCtx, item adtype.ResponseItem, response adtype.Response) *itemMetaInfo {
-	meta := &itemMetaInfo{
-		Items: []*itemMetaMenuInfo{},
-	}
-	if e.metaConf.ComplaintAdURL != "" {
-		meta.Items = append(meta.Items, &itemMetaMenuInfo{
-			Title: "Report this Ad",
-			URL:   e.metaConf.ComplaintAdURL,
-		})
-	}
-	if e.metaConf.AboutAdURL != "" {
-		meta.Items = append(meta.Items, &itemMetaMenuInfo{
-			Title: "About this Ad",
-			URL:   e.metaConf.AboutAdURL,
-		})
+func (e _endpoint) prepareItemMeta(item adtype.ResponseItem, response adtype.Response) *itemMetaInfo {
+	var meta *itemMetaInfo
+	if e.metaConf.ComplaintAdURL != "" || e.metaConf.AboutAdURL != "" {
+		meta = &itemMetaInfo{}
+		aucID := response.Request().AuctionID()
+		replacer := strings.NewReplacer(
+			"{auctionid}", aucID,
+			"{auction.id}", aucID,
+			"{auc.id}", aucID,
+			"{adid}", item.AdID(),
+			"{ad.id}", item.AdID(),
+			"{campid}", gocast.Str(item.CampaignID()),
+			"{camp.id}", gocast.Str(item.CampaignID()),
+			"{campaignid}", gocast.Str(item.CampaignID()),
+			"{campaign.id}", gocast.Str(item.CampaignID()),
+			"{reason}", "")
+		if e.metaConf.ComplaintAdURL != "" {
+			meta.Items = append(meta.Items, &itemMetaMenuInfo{
+				Title: "Report this Ad",
+				URL:   replacer.Replace(e.metaConf.ComplaintAdURL),
+			})
+		}
+		if e.metaConf.AboutAdURL != "" {
+			meta.Items = append(meta.Items, &itemMetaMenuInfo{
+				Title: "About this Ad",
+				URL:   replacer.Replace(e.metaConf.AboutAdURL),
+			})
+		}
 	}
 	return meta
 }
