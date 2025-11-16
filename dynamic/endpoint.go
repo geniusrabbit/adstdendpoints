@@ -7,7 +7,6 @@ package dynamic
 
 import (
 	"encoding/json"
-	"math/rand"
 	"strings"
 
 	"github.com/demdxx/gocast/v2"
@@ -109,7 +108,10 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 			assets = make([]asset, 0, len(baseAssets))
 			processed := map[string]int{}
 			for _, as := range baseAssets {
-				if idx, ok := processed[as.Name]; !ok || rand.Float64() > 0.5 {
+				if as.URL == "" {
+					continue
+				}
+				if idx, ok := processed[as.Name]; !ok {
 					nas := asset{
 						Name:   as.Name,
 						Path:   e.urlGen.CDNURL(as.URL),
