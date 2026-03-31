@@ -131,7 +131,7 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 		}
 
 		// Add item to response group by impression ID
-		resp.getGroupOrCreate(ad.ImpressionID()).addItem(&item{
+		resp.getGroupOrCreate(ad.TargetCodename()).addItem(&item{
 			ID:         ad.ID(),
 			Type:       ad.PriorityFormatType().Name(),
 			URL:        url,
@@ -150,7 +150,7 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 	// Add empty group tracking if no items
 	req := response.Request()
 	for _, imp := range req.Impressions() {
-		group := resp.getGroupOrCreate(imp.ID)
+		group := resp.getGroupOrCreate(imp.TargetCodename())
 		if len(group.Items) == 0 {
 			group.CustomTracker = tracker{
 				Impressions: []string{
@@ -225,7 +225,7 @@ func (e _endpoint) renderEmpty(ctx *fasthttp.RequestCtx, response adtype.Respons
 	// Add empty group tracking
 	req := response.Request()
 	for _, imp := range req.Impressions() {
-		group := resp.getGroupOrCreate(imp.ID)
+		group := resp.getGroupOrCreate(imp.TargetCodename())
 		if len(group.Items) == 0 {
 			group.CustomTracker = tracker{
 				Impressions: []string{

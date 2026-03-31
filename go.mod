@@ -3,8 +3,8 @@ module github.com/geniusrabbit/adstdendpoints
 go 1.24.4
 
 require (
-	github.com/demdxx/gocast/v2 v2.10.2
-	github.com/geniusrabbit/adcorelib v0.0.0-20251010103900-3ed39bd51ba0
+	github.com/demdxx/gocast/v2 v2.11.0
+	github.com/geniusrabbit/adcorelib v0.0.0-20260331151326-8e9dacd691a6
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/valyala/fasthttp v1.68.0
 	github.com/valyala/quicktemplate v1.8.0

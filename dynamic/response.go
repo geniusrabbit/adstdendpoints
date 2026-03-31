@@ -86,7 +86,7 @@ type item struct {
 
 //easyjson:json
 type group struct {
-	ID            string  `json:"id"`
+	ID            string  `json:"id"` // ID of the placement on the site (adzone, slot, unit, etc.)
 	CustomTracker tracker `json:"custom_tracker,omitempty"`
 	Items         []*item `json:"items"`
 }
