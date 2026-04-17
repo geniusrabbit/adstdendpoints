@@ -34,17 +34,17 @@ The dynamic endpoint serves structured JSON responses optimized for:
 - **Event Tracking**: Comprehensive impression, view, and click tracking
 - **Meta Information**: Configurable compliance and advertiser information
 - **Debug Support**: Detailed debug information for development and testing
-- **Format Support**: JSONP and JSON response formats
+- **Format Support**: JSON and JSONP (use `format=jsonp`)
 
 ## Ad Format Types
 
-| Format Type | Description | Use Cases |
-|-------------|-------------|-----------|
-| `native` | Content-style ads with title, description, images, and videos | Editorial integration, sponsored content, video content |
-| `banner` | Traditional display banners with images, videos, and HTML | Website monetization, display campaigns, rich media |
-| `slider_banner` | Multi-asset banner carousels | Product showcases, brand campaigns |
-| `slider_video` | Video carousel presentations | Entertainment, media content |
-| `proxy` | Server-rendered HTML content with `content` or `content_url` | Legacy systems, iframe integration |
+| Format Type     | Description                                                   | Use Cases                                               |
+| --------------- | ------------------------------------------------------------- | ------------------------------------------------------- |
+| `native`        | Content-style ads with title, description, images, and videos | Editorial integration, sponsored content, video content |
+| `banner`        | Traditional display banners with images, videos, and HTML     | Website monetization, display campaigns, rich media     |
+| `slider_banner` | Multi-asset banner carousels                                  | Product showcases, brand campaigns                      |
+| `slider_video`  | Video carousel presentations                                  | Entertainment, media content                            |
+| `proxy`         | Server-rendered HTML content with `content` or `content_url`  | Legacy systems, iframe integration                      |
 
 ## Struct Descriptions
 
@@ -93,16 +93,13 @@ Represents an individual ad unit with content, assets, and tracking.
 - **`ID`** (`any`): Unique identifier for the ad item
 - **`Type`** (`string`): Ad format type (`native`, `banner`, `slider_banner`, etc.)
 - **`URL`** (`string`, optional): Click-through destination URL
-- **`Content`** (`string`, optional): Raw HTML/text content for direct rendering (proxy ads only, mutually exclusive with `ContentURL`)
-- **`ContentURL`** (`string`, optional): IFrame URL for proxy content delivery (proxy ads only, mutually exclusive with `Content`)
+- **`Content`** (`string`, optional): Raw HTML/text content for direct rendering (proxy ads; prefer this when present)
+- **`ContentURL`** (`string`, optional): IFrame URL for proxy content delivery (proxy ads)
 - **`Fields`** (`map[string]any`, optional): Dynamic key-value pairs for ad content
 - **`Assets`** (`[]asset`, optional): Media files associated with the ad (images, videos, etc.)
 
-**Note:** `Content` and `ContentURL` are supported only by proxy ads and are mutually exclusive:
+Note: Proxy ads typically provide either `content` (raw HTML) or `content_url` (iframe source). Renderers/templates should prefer `content` when present. Sources may include one or both fields depending on integration; choose the appropriate field according to your rendering strategy.
 
-- **Proxy ads with HTML injection**: Use `Content` with raw HTML
-- **Proxy ads with iframe**: Use `ContentURL` with iframe source URL  
-- **Banner/Native ads**: Use `URL` for click destination and `Assets` for media content (images, videos, etc.)
 - **`Tracker`** (`tracker`): Event tracking configuration
 - **`Meta`** (`*itemMetaInfo`, optional): Advertiser and compliance information
 - **`Debug`** (`any`, optional): Debug information (development mode only)
@@ -207,7 +204,7 @@ metaConf := dynamic.MetaConfig{
       "url": "https://api.example.com/complaint"
     },
     {
-      "title": "About this Ad", 
+      "title": "About this Ad",
       "url": "https://api.example.com/about"
     }
   ]
@@ -266,7 +263,7 @@ curl -X GET 'https://api.example.com/dynamic?zone=123&type=native&count=3&keywor
                 },
                 {
                   "path": "https://cdn.sspserver.com/assets/native/thumb-200x150.jpg",
-                  "type": "image", 
+                  "type": "image",
                   "width": 200,
                   "height": 150
                 }
@@ -289,23 +286,21 @@ curl -X GET 'https://api.example.com/dynamic?zone=123&type=native&count=3&keywor
               "https://track.sspserver.com/view?id=native-ad-123",
               "https://advertiser.com/track/view/xyz123"
             ],
-            "clicks": [
-              "https://advertiser.com/track/click/xyz123"
-            ]
+            "clicks": ["https://advertiser.com/track/click/xyz123"]
           },
-          "meta": {
+          "adinfo": {
             "advertiser": {
-              "id": 456,
+              "id": "456",
               "name": "TechCorp Inc.",
               "about_url": "https://techcorp.com/about",
               "privacy_url": "https://techcorp.com/privacy"
             },
             "ad": {
-              "id": 789,
-              "campaign_id": 101112,
+              "id": "789",
+              "campaign_id": "101112",
               "description": "Technology innovation campaign"
             },
-            "items": [
+            "actions": [
               {
                 "title": "Report this Ad",
                 "url": "https://api.sspserver.com/complaint?ad=789"
@@ -451,12 +446,8 @@ curl -X GET 'https://api.example.com/dynamic?zone=456&type=banner&w=728&h=90&for
             }
           ],
           "tracker": {
-            "impressions": [
-              "https://track.sspserver.com/imp?id=banner-ad-456"
-            ],
-            "views": [
-              "https://track.sspserver.com/view?id=banner-ad-456"
-            ]
+            "impressions": ["https://track.sspserver.com/imp?id=banner-ad-456"],
+            "views": ["https://track.sspserver.com/view?id=banner-ad-456"]
           }
         }
       ]
@@ -524,9 +515,7 @@ curl -X GET 'https://api.example.com/dynamic?zone=789&type=banner&w=300&h=250' \
               "https://track.sspserver.com/view?id=video-banner-789",
               "https://track.sspserver.com/video-start?id=video-banner-789"
             ],
-            "clicks": [
-              "https://streaming.example.com/track/click/abc789"
-            ]
+            "clicks": ["https://streaming.example.com/track/click/abc789"]
           }
         }
       ]
@@ -577,7 +566,7 @@ curl -X GET 'https://api.example.com/dynamic?zone=654&type=slider_banner&w=320&h
               "height": 250
             },
             {
-              "name": "slide_2", 
+              "name": "slide_2",
               "path": "https://cdn.sspserver.com/fashion/spring-slide-2-320x250.jpg",
               "type": "image",
               "width": 320,
@@ -659,7 +648,7 @@ curl -X GET 'https://api.example.com/dynamic?zone=987&type=slider_video&w=400&h=
             },
             {
               "name": "video_slide_2",
-              "path": "https://cdn.sspserver.com/travel/destination-2-400x300.mp4", 
+              "path": "https://cdn.sspserver.com/travel/destination-2-400x300.mp4",
               "type": "video",
               "width": 400,
               "height": 300
@@ -667,7 +656,7 @@ curl -X GET 'https://api.example.com/dynamic?zone=987&type=slider_video&w=400&h=
             {
               "name": "video_slide_3",
               "path": "https://cdn.sspserver.com/travel/destination-3-400x300.mp4",
-              "type": "video", 
+              "type": "video",
               "width": 400,
               "height": 300
             },
@@ -679,7 +668,7 @@ curl -X GET 'https://api.example.com/dynamic?zone=987&type=slider_video&w=400&h=
               "height": 300
             },
             {
-              "name": "poster_slide_2", 
+              "name": "poster_slide_2",
               "path": "https://cdn.sspserver.com/travel/poster-2-400x300.jpg",
               "type": "image",
               "width": 400,
@@ -700,7 +689,7 @@ curl -X GET 'https://api.example.com/dynamic?zone=987&type=slider_video&w=400&h=
             "views": [
               "https://track.sspserver.com/view?id=slider-video-987",
               "https://track.sspserver.com/video-slide-start?id=slider-video-987&slide=1",
-              "https://track.sspserver.com/video-slide-start?id=slider-video-987&slide=2", 
+              "https://track.sspserver.com/video-slide-start?id=slider-video-987&slide=2",
               "https://track.sspserver.com/video-slide-start?id=slider-video-987&slide=3"
             ]
           }
@@ -748,12 +737,8 @@ curl -X GET 'https://api.example.com/dynamic?zone=147&type=proxy&w=300&h=600' \
             "text_color": "#333333"
           },
           "tracker": {
-            "impressions": [
-              "https://track.sspserver.com/imp?id=proxy-ad-147"
-            ],
-            "views": [
-              "https://track.sspserver.com/view?id=proxy-ad-147"
-            ]
+            "impressions": ["https://track.sspserver.com/imp?id=proxy-ad-147"],
+            "views": ["https://track.sspserver.com/view?id=proxy-ad-147"]
           }
         }
       ]
@@ -794,9 +779,7 @@ curl -X GET 'https://api.example.com/dynamic?zone=258&type=proxy&w=320&h=480' \
             "impressions": [
               "https://track.sspserver.com/imp?id=proxy-iframe-258"
             ],
-            "views": [
-              "https://track.sspserver.com/view?id=proxy-iframe-258"
-            ]
+            "views": ["https://track.sspserver.com/view?id=proxy-iframe-258"]
           }
         }
       ]
@@ -850,48 +833,50 @@ The endpoint automatically detects robot/bot traffic using `request.IsRobot()` a
 // Fetch native ads and integrate with content feed
 async function loadNativeAds() {
   try {
-    const response = await fetch('/dynamic?zone=123&type=native&count=3&keywords=technology');
+    const response = await fetch(
+      "/dynamic?zone=123&type=native&count=3&keywords=technology",
+    );
     const data = await response.json();
-    
-    data.groups.forEach(group => {
-      group.items.forEach(item => {
+
+    data.groups.forEach((group) => {
+      group.items.forEach((item) => {
         renderNativeAd(item);
-        
+
         // Fire impression tracking
-        item.tracker.impressions.forEach(url => {
+        item.tracker.impressions.forEach((url) => {
           new Image().src = url;
         });
       });
     });
   } catch (error) {
-    console.error('Failed to load ads:', error);
+    console.error("Failed to load ads:", error);
   }
 }
 
 function renderNativeAd(item) {
-  const container = document.createElement('article');
-  container.className = 'native-ad';
+  const container = document.createElement("article");
+  container.className = "native-ad";
   container.innerHTML = `
     <div class="sponsored-label">${item.fields.sponsored_label}</div>
-    <img src="${item.assets.find(a => a.name === 'main_image').path}" 
+    <img src="${item.assets.find((a) => a.name === "main_image").path}" 
          alt="${item.fields.title}" class="ad-image">
     <h3 class="ad-title">${item.fields.title}</h3>
     <p class="ad-description">${item.fields.description}</p>
     <div class="ad-brand">${item.fields.brandname}</div>
     <button class="ad-cta">${item.fields.call_to_action}</button>
   `;
-  
+
   // Add click handler
-  container.addEventListener('click', () => {
+  container.addEventListener("click", () => {
     // Fire click tracking
-    item.tracker.clicks.forEach(url => {
+    item.tracker.clicks.forEach((url) => {
       new Image().src = url;
     });
-    window.open(item.url, '_blank');
+    window.open(item.url, "_blank");
   });
-  
+
   // Add to content feed
-  document.querySelector('#content-feed').appendChild(container);
+  document.querySelector("#content-feed").appendChild(container);
 }
 ```
 
@@ -901,34 +886,35 @@ function renderNativeAd(item) {
 // Banner ad with assets (no HTML content)
 function loadAssetBanner(containerId, zone) {
   fetch(`/dynamic?zone=${zone}&type=banner&w=300&h=250`)
-    .then(response => response.json())
-    .then(data => {
+    .then((response) => response.json())
+    .then((data) => {
       const item = data.groups[0].items[0];
       const container = document.getElementById(containerId);
-      
+
       // Banner ads use assets for media content
-      const bannerAsset = item.assets.find(a => a.name === 'main_banner') || item.assets[0];
-      
-      const bannerDiv = document.createElement('div');
-      bannerDiv.className = 'asset-banner';
+      const bannerAsset =
+        item.assets.find((a) => a.name === "main_banner") || item.assets[0];
+
+      const bannerDiv = document.createElement("div");
+      bannerDiv.className = "asset-banner";
       bannerDiv.innerHTML = `
         <img src="${bannerAsset.path}" 
-             alt="${item.fields.title || 'Advertisement'}"
+             alt="${item.fields.title || "Advertisement"}"
              style="width: 100%; height: auto; cursor: pointer;">
       `;
-      
+
       // Add click handler
-      bannerDiv.addEventListener('click', () => {
-        item.tracker.clicks.forEach(url => {
+      bannerDiv.addEventListener("click", () => {
+        item.tracker.clicks.forEach((url) => {
           new Image().src = url;
         });
-        window.open(item.url, '_blank');
+        window.open(item.url, "_blank");
       });
-      
+
       container.appendChild(bannerDiv);
-      
+
       // Fire impression tracking
-      item.tracker.impressions.forEach(url => {
+      item.tracker.impressions.forEach((url) => {
         new Image().src = url;
       });
     });
@@ -941,44 +927,44 @@ function loadAssetBanner(containerId, zone) {
 // Video banner with autoplay and tracking (using banner type with video assets)
 function loadVideoBanner(containerId, zone) {
   fetch(`/dynamic?zone=${zone}&type=banner&w=300&h=250`)
-    .then(response => response.json())
-    .then(data => {
+    .then((response) => response.json())
+    .then((data) => {
       const item = data.groups[0].items[0];
       const container = document.getElementById(containerId);
-      
+
       // Check if this banner has video assets
-      const videoAsset = item.assets.find(a => a.type === 'video');
+      const videoAsset = item.assets.find((a) => a.type === "video");
       if (videoAsset) {
-        const video = document.createElement('video');
+        const video = document.createElement("video");
         video.src = videoAsset.path;
-        video.poster = item.assets.find(a => a.name === 'poster_image')?.path;
+        video.poster = item.assets.find((a) => a.name === "poster_image")?.path;
         video.autoplay = item.fields.autoplay;
         video.muted = item.fields.muted;
         video.controls = item.fields.controls;
-        video.style.width = '100%';
-        video.style.height = '100%';
-        
+        video.style.width = "100%";
+        video.style.height = "100%";
+
         // Video event tracking
-        video.addEventListener('play', () => {
-          item.tracker.views.forEach(url => {
-            if (url.includes('video-start')) {
+        video.addEventListener("play", () => {
+          item.tracker.views.forEach((url) => {
+            if (url.includes("video-start")) {
               new Image().src = url;
             }
           });
         });
-        
-        video.addEventListener('click', () => {
-          item.tracker.clicks.forEach(url => {
+
+        video.addEventListener("click", () => {
+          item.tracker.clicks.forEach((url) => {
             new Image().src = url;
           });
-          window.open(item.url, '_blank');
+          window.open(item.url, "_blank");
         });
-        
+
         container.appendChild(video);
       }
-      
+
       // Fire impression tracking
-      item.tracker.impressions.forEach(url => {
+      item.tracker.impressions.forEach((url) => {
         new Image().src = url;
       });
     });
@@ -995,80 +981,90 @@ class SliderBanner {
     this.currentSlide = 0;
     this.loadAd(zone);
   }
-  
+
   async loadAd(zone) {
     try {
       const response = await fetch(`/dynamic?zone=${zone}&type=slider_banner`);
       const data = await response.json();
       this.item = data.groups[0].items[0];
       this.render();
-      
+
       // Fire impression tracking
-      this.item.tracker.impressions.forEach(url => {
+      this.item.tracker.impressions.forEach((url) => {
         new Image().src = url;
       });
     } catch (error) {
-      console.error('Failed to load slider banner:', error);
+      console.error("Failed to load slider banner:", error);
     }
   }
-  
+
   render() {
-    const slides = this.item.assets.filter(asset => asset.name.startsWith('slide_'));
-    
+    const slides = this.item.assets.filter((asset) =>
+      asset.name.startsWith("slide_"),
+    );
+
     this.container.innerHTML = `
       <div class="slider-container">
         <div class="slides">
-          ${slides.map((slide, index) => `
+          ${slides
+            .map(
+              (slide, index) => `
             <img src="${slide.path}" 
-                 class="slide ${index === 0 ? 'active' : ''}"
+                 class="slide ${index === 0 ? "active" : ""}"
                  alt="Slide ${index + 1}">
-          `).join('')}
+          `,
+            )
+            .join("")}
         </div>
         <div class="slider-controls">
           <button class="prev" onclick="this.previousSlide()">‹</button>
           <div class="dots">
-            ${slides.map((_, index) => `
-              <span class="dot ${index === 0 ? 'active' : ''}" 
+            ${slides
+              .map(
+                (_, index) => `
+              <span class="dot ${index === 0 ? "active" : ""}" 
                     onclick="this.goToSlide(${index})"></span>
-            `).join('')}
+            `,
+              )
+              .join("")}
           </div>
           <button class="next" onclick="this.nextSlide()">›</button>
         </div>
       </div>
     `;
-    
+
     // Auto-advance if enabled
     if (this.item.fields.auto_advance) {
       this.startAutoAdvance();
     }
-    
+
     // Add click handler
-    this.container.addEventListener('click', () => {
-      this.item.tracker.clicks.forEach(url => {
+    this.container.addEventListener("click", () => {
+      this.item.tracker.clicks.forEach((url) => {
         new Image().src = url;
       });
-      window.open(this.item.url, '_blank');
+      window.open(this.item.url, "_blank");
     });
   }
-  
+
   nextSlide() {
-    const slides = this.container.querySelectorAll('.slide');
-    const dots = this.container.querySelectorAll('.dot');
-    
-    slides[this.currentSlide].classList.remove('active');
-    dots[this.currentSlide].classList.remove('active');
-    
+    const slides = this.container.querySelectorAll(".slide");
+    const dots = this.container.querySelectorAll(".dot");
+
+    slides[this.currentSlide].classList.remove("active");
+    dots[this.currentSlide].classList.remove("active");
+
     this.currentSlide = (this.currentSlide + 1) % slides.length;
-    
-    slides[this.currentSlide].classList.add('active');
-    dots[this.currentSlide].classList.add('active');
-    
+
+    slides[this.currentSlide].classList.add("active");
+    dots[this.currentSlide].classList.add("active");
+
     // Fire slide view tracking
     this.fireSlideTracking(this.currentSlide + 1);
   }
-  
+
   fireSlideTracking(slideNumber) {
-    this.item.tracker.views.forEach(url => {
+    this.item.tracker.views.forEach((url) => {
       if (url.includes(`slide=${slideNumber}`)) {
         new Image().src = url;
       }
@@ -1081,39 +1077,39 @@ class SliderBanner {
 
 ```jsx
 // React Native component for dynamic ads
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, TouchableOpacity, Video } from 'react-native';
+import React, { useState, useEffect } from "react";
+import { View, Text, Image, TouchableOpacity, Video } from "react-native";
 
 const DynamicAd = ({ zone, adType, width, height }) => {
   const [adData, setAdData] = useState(null);
-  
+
   useEffect(() => {
     loadAd();
   }, [zone, adType]);
-  
+
   const loadAd = async () => {
     try {
       const response = await fetch(
-        `/dynamic?zone=${zone}&type=${adType}&w=${width}&h=${height}`
+        `/dynamic?zone=${zone}&type=${adType}&w=${width}&h=${height}`,
       );
       const data = await response.json();
       setAdData(data.groups[0].items[0]);
-      
+
       // Fire impression tracking
       if (data.groups[0].items[0]) {
         fireTracking(data.groups[0].items[0].tracker.impressions);
       }
     } catch (error) {
-      console.error('Ad loading failed:', error);
+      console.error("Ad loading failed:", error);
     }
   };
-  
+
   const fireTracking = (urls) => {
-    urls.forEach(url => {
-      fetch(url, { method: 'GET' }).catch(() => {});
+    urls.forEach((url) => {
+      fetch(url, { method: "GET" }).catch(() => {});
     });
   };
-  
+
   const handleAdClick = () => {
     if (adData) {
       fireTracking(adData.tracker.clicks);
@@ -1121,16 +1117,20 @@ const DynamicAd = ({ zone, adType, width, height }) => {
       Linking.openURL(adData.url);
     }
   };
-  
-  if (!adData) return <View style={{width, height}} />;
-  
+
+  if (!adData) return <View style={{ width, height }} />;
+
   switch (adType) {
-    case 'native':
+    case "native":
       return (
         <TouchableOpacity onPress={handleAdClick} style={styles.nativeAd}>
-          <Text style={styles.sponsoredLabel}>{adData.fields.sponsored_label}</Text>
-          <Image 
-            source={{uri: adData.assets.find(a => a.name === 'main_image').path}}
+          <Text style={styles.sponsoredLabel}>
+            {adData.fields.sponsored_label}
+          </Text>
+          <Image
+            source={{
+              uri: adData.assets.find((a) => a.name === "main_image").path,
+            }}
             style={styles.adImage}
           />
           <Text style={styles.adTitle}>{adData.fields.title}</Text>
@@ -1138,20 +1138,22 @@ const DynamicAd = ({ zone, adType, width, height }) => {
           <Text style={styles.brandName}>{adData.fields.brandname}</Text>
         </TouchableOpacity>
       );
-      
-    case 'banner':
+
+    case "banner":
       // Check if banner has video assets
-      const videoAsset = adData.assets.find(a => a.type === 'video');
+      const videoAsset = adData.assets.find((a) => a.type === "video");
       if (videoAsset) {
         return (
           <TouchableOpacity onPress={handleAdClick}>
             <Video
-              source={{uri: videoAsset.path}}
-              poster={adData.assets.find(a => a.name === 'poster_image')?.path}
+              source={{ uri: videoAsset.path }}
+              poster={
+                adData.assets.find((a) => a.name === "poster_image")?.path
+              }
               shouldPlay={adData.fields.autoplay}
               isMuted={adData.fields.muted}
               resizeMode="cover"
-              style={{width, height}}
+              style={{ width, height }}
             />
           </TouchableOpacity>
         );
@@ -1159,20 +1161,20 @@ const DynamicAd = ({ zone, adType, width, height }) => {
         // Image banner
         return (
           <TouchableOpacity onPress={handleAdClick}>
-            <Image 
-              source={{uri: adData.assets[0].path}}
-              style={{width, height}}
+            <Image
+              source={{ uri: adData.assets[0].path }}
+              style={{ width, height }}
             />
           </TouchableOpacity>
         );
       }
-      
+
     default:
       return (
         <TouchableOpacity onPress={handleAdClick}>
-          <Image 
-            source={{uri: adData.assets[0].path}}
-            style={{width, height}}
+          <Image
+            source={{ uri: adData.assets[0].path }}
+            style={{ width, height }}
           />
         </TouchableOpacity>
       );
@@ -1182,35 +1184,35 @@ const DynamicAd = ({ zone, adType, width, height }) => {
 const styles = {
   nativeAd: {
     padding: 12,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: "#f9f9f9",
     borderRadius: 8,
-    margin: 8
+    margin: 8,
   },
   sponsoredLabel: {
     fontSize: 10,
-    color: '#666',
-    marginBottom: 8
+    color: "#666",
+    marginBottom: 8,
   },
   adImage: {
-    width: '100%',
+    width: "100%",
     height: 200,
     borderRadius: 4,
-    marginBottom: 8
+    marginBottom: 8,
   },
   adTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4
+    fontWeight: "bold",
+    marginBottom: 4,
   },
   adDescription: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 8
+    color: "#666",
+    marginBottom: 8,
   },
   brandName: {
     fontSize: 12,
-    color: '#888'
-  }
+    color: "#888",
+  },
 };
 ```
 
@@ -1248,7 +1250,7 @@ Tracking pixels are generated with different event types and statuses:
 // Success tracking
 e.urlGen.PixelURL(events.Impression, events.StatusSuccess, item, response, false)
 
-// Custom/empty tracking  
+// Custom/empty tracking
 e.urlGen.PixelURL(events.Impression, events.StatusCustom, item, response, false)
 ```
 
@@ -1264,60 +1266,60 @@ Assets with the same name are deduplicated with random selection:
 
 ### Core Parameters
 
-| Parameter  | Type     | Description | Example |
-|------------|----------|-------------|---------|
-| `zone`     | `int`    | **Required.** Zone/placement identifier | `zone=123` |
-| `type`     | `string` | Ad format type | `type=native,banner` |
-| `count`    | `int`    | Number of ads requested (1-10) | `count=3` |
+| Parameter | Type     | Description                             | Example              |
+| --------- | -------- | --------------------------------------- | -------------------- |
+| `zone`    | `int`    | **Required.** Zone/placement identifier | `zone=123`           |
+| `type`    | `string` | Ad format type                          | `type=native,banner` |
+| `count`   | `int`    | Number of ads requested (1-10)          | `count=3`            |
 
 ### Sizing Parameters
 
-| Parameter  | Type     | Description | Example |
-|------------|----------|-------------|---------|
-| `w`        | `int`    | Maximum desired width in pixels | `w=300` |
-| `h`        | `int`    | Maximum desired height in pixels | `h=250` |
-| `mw`       | `int`    | Minimum width constraint | `mw=250` |
-| `mh`       | `int`    | Minimum height constraint | `mh=200` |
-| `fmt`      | `string` | Size format shorthand | `fmt=300x250` |
-| `width`    | `int`    | Alias for `mw` | `width=250` |
-| `height`   | `int`    | Alias for `mh` | `height=200` |
+| Parameter | Type     | Description                      | Example       |
+| --------- | -------- | -------------------------------- | ------------- |
+| `w`       | `int`    | Maximum desired width in pixels  | `w=300`       |
+| `h`       | `int`    | Maximum desired height in pixels | `h=250`       |
+| `mw`      | `int`    | Minimum width constraint         | `mw=250`      |
+| `mh`      | `int`    | Minimum height constraint        | `mh=200`      |
+| `fmt`     | `string` | Size format shorthand            | `fmt=300x250` |
+| `width`   | `int`    | Alias for `mw`                   | `width=250`   |
+| `height`  | `int`    | Alias for `mh`                   | `height=200`  |
 
 ### Targeting Parameters
 
-| Parameter  | Type     | Description | Example |
-|------------|----------|-------------|---------|
-| `keywords` | `string` | Comma-separated targeting keywords | `keywords=tech,mobile,apps` |
-| `category` | `string` | Content category for targeting | `category=technology` |
-| `x`        | `int`    | X coordinate for geo/position targeting | `x=100` |
-| `y`        | `int`    | Y coordinate for geo/position targeting | `y=200` |
+| Parameter  | Type     | Description                             | Example                     |
+| ---------- | -------- | --------------------------------------- | --------------------------- |
+| `keywords` | `string` | Comma-separated targeting keywords      | `keywords=tech,mobile,apps` |
+| `category` | `string` | Content category for targeting          | `category=technology`       |
+| `x`        | `int`    | X coordinate for geo/position targeting | `x=100`                     |
+| `y`        | `int`    | Y coordinate for geo/position targeting | `y=200`                     |
 
 ### Format Control Parameters
 
-| Parameter  | Type     | Description | Values |
-|------------|----------|-------------|--------|
-| `format`   | `string` | Response format | `json` (default), `jsonp` |
-| `callback` | `string` | JSONP callback function name | `callback=handleAds` |
-| `debug`    | `bool`   | Enable debug information | `debug=true` |
+| Parameter  | Type     | Description                  | Values                         |
+| ---------- | -------- | ---------------------------- | ------------------------------ |
+| `format`   | `string` | Response format              | `jsonp` (JSONP). Default: JSON |
+| `callback` | `string` | JSONP callback function name | `callback=handleAds`           |
+| `debug`    | `bool`   | Enable debug information     | `debug=true`                   |
 
 ### Tracking Parameters
 
-| Parameter  | Type     | Description | Example |
-|------------|----------|-------------|---------|
-| `subid1`   | `string` | Primary custom tracking ID | `subid1=user123` |
-| `subid2`   | `string` | Secondary tracking ID | `subid2=campaign456` |
-| `subid3`   | `string` | Tertiary tracking ID | `subid3=source789` |
-| `subid4`   | `string` | Additional tracking ID | `subid4=medium_cpc` |
-| `subid5`   | `string` | Additional tracking ID | `subid5=creative_a` |
+| Parameter | Type     | Description                | Example              |
+| --------- | -------- | -------------------------- | -------------------- |
+| `subid1`  | `string` | Primary custom tracking ID | `subid1=user123`     |
+| `subid2`  | `string` | Secondary tracking ID      | `subid2=campaign456` |
+| `subid3`  | `string` | Tertiary tracking ID       | `subid3=source789`   |
+| `subid4`  | `string` | Additional tracking ID     | `subid4=medium_cpc`  |
+| `subid5`  | `string` | Additional tracking ID     | `subid5=creative_a`  |
 
 ### Ad Type Values
 
-| Type | Description | Best For |
-|------|-------------|----------|
-| `native` | Content-style ads with title, description, images, and videos | Editorial integration, sponsored content, video content |
-| `banner` | Traditional display rectangles with images, videos, and HTML | Website monetization, programmatic, rich media |
-| `slider_banner` | Multi-image carousel banners | Product showcases, brand stories |
-| `slider_video` | Video carousel presentations | Entertainment, travel, lifestyle |
-| `proxy` | Server-rendered HTML content with `content` or `content_url` | Legacy integration, custom templates |
+| Type            | Description                                                   | Best For                                                |
+| --------------- | ------------------------------------------------------------- | ------------------------------------------------------- |
+| `native`        | Content-style ads with title, description, images, and videos | Editorial integration, sponsored content, video content |
+| `banner`        | Traditional display rectangles with images, videos, and HTML  | Website monetization, programmatic, rich media          |
+| `slider_banner` | Multi-image carousel banners                                  | Product showcases, brand stories                        |
+| `slider_video`  | Video carousel presentations                                  | Entertainment, travel, lifestyle                        |
+| `proxy`         | Server-rendered HTML content with `content` or `content_url`  | Legacy integration, custom templates                    |
 
 ## API Interaction Example
 
@@ -1327,9 +1329,11 @@ This section demonstrates how to interact with the system using a curl request a
 
 To retrieve the response data, use the following curl command. Note that since it’s a GET request, no request body is needed.
 
+To request JSONP instead of JSON, add `?format=jsonp&callback=yourFn`. JSONP responses use `application/javascript` Content-Type; when `callback` is omitted the default name `callback` is used.
+
 ```sh
-curl -X GET 'http://localhost:8080/api/response?format=auto&type=banner&w=100&h=50' \
-     -H "Accept: application/json"
+curl -X GET 'http://localhost:8080/api/response?type=banner&w=100&h=50' \
+  -H "Accept: application/json"
 ```
 
 ### Sample JSON Response
@@ -1364,14 +1368,8 @@ curl -X GET 'http://localhost:8080/api/response?format=auto&type=banner&w=100&h=
               "impression-tracking-url-1",
               "impression-tracking-url-2"
             ],
-            "views": [
-              "view-tracking-url-1",
-              "view-tracking-url-2"
-            ],
-            "clicks": [
-              "click-tracking-url-1",
-              "click-tracking-url-2"
-            ]
+            "views": ["view-tracking-url-1", "view-tracking-url-2"],
+            "clicks": ["click-tracking-url-1", "click-tracking-url-2"]
           }
         }
       ]

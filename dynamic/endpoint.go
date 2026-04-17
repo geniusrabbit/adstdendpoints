@@ -72,10 +72,10 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 	// Process response ad items
 	for _, ad := range response.Ads() {
 		var (
-			assets       []asset
+			assets       []adAsset
 			aditm        = ad.(adtype.ResponseItem)
 			url          string
-			trackerBlock tracker
+			trackerBlock *tracker
 		)
 
 		// Generate click URL
@@ -83,7 +83,7 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 			url, _ = e.urlGen.ClickURL(aditm, response)
 		}
 
-		trackerBlock = tracker{
+		trackerBlock = &tracker{
 			Impressions: []string{
 				e.noErrorPixelURL(events.Impression, events.StatusSuccess, aditm.Impression(), aditm, response, false),
 			},
@@ -105,14 +105,14 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 
 		// Process assets if provided
 		if baseAssets := aditm.Assets(); len(baseAssets) > 0 {
-			assets = make([]asset, 0, len(baseAssets))
+			assets = make([]adAsset, 0, len(baseAssets))
 			processed := map[string]int{}
 			for _, as := range baseAssets {
 				if as.URL == "" {
 					continue
 				}
 				if idx, ok := processed[as.Name]; !ok {
-					nas := asset{
+					nas := adAsset{
 						Name:   as.Name,
 						Path:   e.urlGen.CDNURL(as.URL),
 						Type:   as.Type.Code(),
@@ -140,11 +140,14 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 			Fields:     noEmptyFieldsMap(aditm.ContentFields()),
 			Assets:     assets,
 			Tracker:    trackerBlock,
-			Meta:       e.prepareItemMeta(aditm, response),
+			AdInfo:     e.prepareItemAdInfo(aditm, response),
 			Debug: gocast.IfThenExec(response.Request().IsDebug(),
 				func() any { return map[string]any{"adUnit": ad} },
 				func() any { return nil }),
 		})
+
+		// Add source info
+		e.addSourceInfo(&resp, aditm.Source())
 	}
 
 	// Add empty group tracking if no items
@@ -187,10 +190,46 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 	return json.NewEncoder(ctx).Encode(resp)
 }
 
-func (e _endpoint) prepareItemMeta(item adtype.ResponseItem, response adtype.Response) *itemMetaInfo {
-	var meta *itemMetaInfo
+func (e _endpoint) addSourceInfo(resp *Response, source adtype.Source) {
+	if source == nil {
+		return
+	}
+	sourceID := gocast.Str(source.ID())
+	if resp.hasSource(sourceID) {
+		return
+	}
+	info := source.Info()
+	if info == nil {
+		info = &adtype.SourceInfo{ID: sourceID, Protocol: source.Protocol()}
+	}
+	resp.AdSources = append(resp.AdSources, &adSourceInfo{
+		ID:          sourceID,
+		Name:        info.Name,
+		Description: info.Description,
+		Domain:      info.Domain,
+		IconURL:     info.IconURL,
+		LogoURL:     info.LogoURL,
+		URL:         info.URL,
+		Metadata:    info.Metadata,
+	})
+}
+
+func (e _endpoint) prepareItemAdInfo(item adtype.ResponseItem, response adtype.Response) *itemMetaInfo {
+	sourceID := ""
+	if source := item.Source(); source != nil {
+		sourceID = u64ID2Str(source.ID())
+	}
+	adInfo := &itemMetaInfo{
+		Advertiser: &itemMetaAdvertiserInfo{
+			ID: u64ID2Str(item.AccountID()),
+		},
+		Ad: &itemMetaAdInfo{
+			ID:         item.AdID(),
+			CampaignID: u64ID2Str(item.CampaignID()),
+			AdSourceID: sourceID,
+		},
+	}
 	if e.metaConf.ComplaintAdURL != "" || e.metaConf.AboutAdURL != "" {
-		meta = &itemMetaInfo{}
 		aucID := response.Request().AuctionID()
 		replacer := strings.NewReplacer(
 			"{auctionid}", aucID,
@@ -203,20 +242,14 @@ func (e _endpoint) prepareItemMeta(item adtype.ResponseItem, response adtype.Res
 			"{campaignid}", gocast.Str(item.CampaignID()),
 			"{campaign.id}", gocast.Str(item.CampaignID()),
 			"{reason}", "")
-		if e.metaConf.ComplaintAdURL != "" {
-			meta.Items = append(meta.Items, &itemMetaMenuInfo{
-				Title: "Report this Ad",
-				URL:   replacer.Replace(e.metaConf.ComplaintAdURL),
-			})
-		}
 		if e.metaConf.AboutAdURL != "" {
-			meta.Items = append(meta.Items, &itemMetaMenuInfo{
-				Title: "About this Ad",
-				URL:   replacer.Replace(e.metaConf.AboutAdURL),
-			})
+			adInfo.Ad.AboutURL = replacer.Replace(e.metaConf.AboutAdURL)
+		}
+		if e.metaConf.ComplaintAdURL != "" {
+			adInfo.addAction("complaint", "Report this Ad", "", replacer.Replace(e.metaConf.ComplaintAdURL))
 		}
 	}
-	return meta
+	return adInfo
 }
 
 func (e _endpoint) renderEmpty(ctx *fasthttp.RequestCtx, response adtype.Response) error {
@@ -246,10 +279,10 @@ func (e _endpoint) renderEmpty(ctx *fasthttp.RequestCtx, response adtype.Respons
 	return json.NewEncoder(ctx).Encode(resp)
 }
 
-func (e _endpoint) thumbsPrepare(thumbs []admodels.AdFileAssetThumb) []assetThumb {
-	nthumbs := make([]assetThumb, 0, len(thumbs))
+func (e _endpoint) thumbsPrepare(thumbs []admodels.AdFileAssetThumb) []adAssetThumb {
+	nthumbs := make([]adAssetThumb, 0, len(thumbs))
 	for _, th := range thumbs {
-		nthumbs = append(nthumbs, assetThumb{
+		nthumbs = append(nthumbs, adAssetThumb{
 			Path:   e.urlGen.CDNURL(th.URL),
 			Type:   th.Type.Code(),
 			Width:  th.Width,
@@ -296,4 +329,12 @@ func noEmptyFieldsMap(m map[string]any) map[string]any {
 		}
 	}
 	return m
+}
+
+//go:inline
+func u64ID2Str(id uint64) string {
+	if id == 0 {
+		return ""
+	}
+	return gocast.Str(id)
 }

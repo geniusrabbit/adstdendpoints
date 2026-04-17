@@ -1,13 +1,33 @@
 package dynamic
 
 //easyjson:json
+type adSourceInfo struct {
+	ID          string         `json:"id"`
+	Name        string         `json:"name,omitempty"`
+	Description string         `json:"description,omitempty"`
+	Domain      string         `json:"domain,omitempty"`
+	IconURL     string         `json:"icon_url,omitempty"`
+	LogoURL     string         `json:"logo_url,omitempty"`
+	URL         string         `json:"url,omitempty"`
+	Metadata    map[string]any `json:"metadata,omitempty"`
+}
+
+//easyjson:json
+type itemMetaActionInfo struct {
+	Type        string `json:"type,omitempty"`
+	Title       string `json:"title,omitempty"`
+	Description string `json:"description,omitempty"`
+	URL         string `json:"url,omitempty"`
+}
+
+//easyjson:json
 type tracker struct {
 	Clicks      []string `json:"clicks,omitempty"`
 	Impressions []string `json:"impressions,omitempty"`
 	Views       []string `json:"views,omitempty"`
 }
 
-type assetThumb struct {
+type adAssetThumb struct {
 	Path   string `json:"path"`
 	Type   string `json:"type,omitempty"`
 	Width  int    `json:"width,omitempty"`
@@ -15,18 +35,18 @@ type assetThumb struct {
 }
 
 //easyjson:json
-type asset struct {
-	Name   string       `json:"name,omitempty"`
-	Path   string       `json:"path"`
-	Type   string       `json:"type,omitempty"`
-	Width  int          `json:"width,omitempty"`
-	Height int          `json:"height,omitempty"`
-	Thumbs []assetThumb `json:"thumbs,omitempty"`
+type adAsset struct {
+	Name   string         `json:"name,omitempty"`
+	Path   string         `json:"path"`
+	Type   string         `json:"type,omitempty"`
+	Width  int            `json:"width,omitempty"`
+	Height int            `json:"height,omitempty"`
+	Thumbs []adAssetThumb `json:"thumbs,omitempty"`
 }
 
 //easyjson:json
 type itemMetaAdvertiserInfo struct {
-	ID         uint64 `json:"id,omitempty"`
+	ID         string `json:"id,omitempty"`
 	Name       string `json:"name,omitempty"`
 	AboutURL   string `json:"about_url,omitempty"`
 	ContactURL string `json:"contact_url,omitempty"`
@@ -36,8 +56,9 @@ type itemMetaAdvertiserInfo struct {
 
 //easyjson:json
 type itemMetaAdInfo struct {
-	ID          uint64 `json:"id,omitempty"`
-	CampaignID  uint64 `json:"campaign_id,omitempty"`
+	ID          string `json:"id,omitempty"`
+	CampaignID  string `json:"campaign_id,omitempty"`
+	AdSourceID  string `json:"adsource_id,omitempty"`
 	Description string `json:"description,omitempty"`
 	MinAge      int    `json:"min_age,omitempty"`
 	AboutURL    string `json:"about_url,omitempty"`
@@ -47,27 +68,19 @@ type itemMetaAdInfo struct {
 }
 
 //easyjson:json
-type itemMetaInfoHide struct {
-	Type            string            `json:"type,omitempty"`               // 'cookie', 'url_param', 'script'
-	HideAdURLType   string            `json:"hide_ad_url_type,omitempty"`   // 'get', 'post', 'pixel'
-	HideAdURL       string            `json:"hide_ad_url,omitempty"`        // URL where user can hide the ad
-	HideAdURLParams map[string]string `json:"hide_ad_url_params,omitempty"` // Additional params for hide ad URL
-	Name            string            `json:"name,omitempty"`               // name of cookie or url param
-	ScriptURL       string            `json:"script_url,omitempty"`         // URL of script which perform hiding
-	Script          string            `json:"script,omitempty"`             // Executable script which perform hiding
-}
-
-//easyjson:json
-type itemMetaMenuInfo struct {
-	Title string `json:"title,omitempty"`
-	URL   string `json:"url,omitempty"`
-}
-
-//easyjson:json
 type itemMetaInfo struct {
 	Advertiser *itemMetaAdvertiserInfo `json:"advertiser,omitempty"`
 	Ad         *itemMetaAdInfo         `json:"ad,omitempty"`
-	Items      []*itemMetaMenuInfo     `json:"items,omitempty"`
+	Actions    []*itemMetaActionInfo   `json:"actions,omitempty"`
+}
+
+func (m *itemMetaInfo) addAction(actionType, title, description, url string) {
+	m.Actions = append(m.Actions, &itemMetaActionInfo{
+		Type:        actionType,
+		Title:       title,
+		Description: description,
+		URL:         url,
+	})
 }
 
 //easyjson:json
@@ -78,9 +91,10 @@ type item struct {
 	Content    string         `json:"content,omitempty"`
 	ContentURL string         `json:"content_url,omitempty"`
 	Fields     map[string]any `json:"fields,omitempty"`
-	Assets     []asset        `json:"assets,omitempty"`
-	Tracker    tracker        `json:"tracker"`
-	Meta       *itemMetaInfo  `json:"meta,omitempty"`
+	Assets     []adAsset      `json:"assets,omitempty"`
+	Tracker    *tracker       `json:"tracker"`
+	Metadata   map[string]any `json:"metadata,omitempty"`
+	AdInfo     *itemMetaInfo  `json:"adinfo,omitempty"`
 	Debug      any            `json:"debug,omitempty"`
 }
 
@@ -100,10 +114,11 @@ func (g *group) addItem(i *item) *group {
 //
 //easyjson:json
 type Response struct {
-	Version       string   `json:"version"`
-	CustomTracker tracker  `json:"custom_tracker,omitempty"`
-	Groups        []*group `json:"groups,omitempty"`
-	Debug         any      `json:"debug,omitempty"`
+	Version       string          `json:"version"`
+	CustomTracker tracker         `json:"custom_tracker,omitempty"`
+	Groups        []*group        `json:"groups,omitempty"`
+	AdSources     []*adSourceInfo `json:"adsources,omitempty"`
+	Debug         any             `json:"debug,omitempty"`
 }
 
 func (r *Response) getGroupOrCreate(groupID string) *group {
@@ -115,4 +130,13 @@ func (r *Response) getGroupOrCreate(groupID string) *group {
 	g := &group{ID: groupID}
 	r.Groups = append(r.Groups, g)
 	return g
+}
+
+func (r *Response) hasSource(sourceID string) bool {
+	for _, s := range r.AdSources {
+		if s.ID == sourceID {
+			return true
+		}
+	}
+	return false
 }
