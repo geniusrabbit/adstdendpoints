@@ -36,12 +36,13 @@ type adAssetThumb struct {
 
 //easyjson:json
 type adAsset struct {
-	Name   string         `json:"name,omitempty"`
-	Path   string         `json:"path"`
-	Type   string         `json:"type,omitempty"`
-	Width  int            `json:"width,omitempty"`
-	Height int            `json:"height,omitempty"`
-	Thumbs []adAssetThumb `json:"thumbs,omitempty"`
+	Name     string         `json:"name,omitempty"`
+	Path     string         `json:"path"`
+	Type     string         `json:"type,omitempty"`
+	Width    int            `json:"width,omitempty"`
+	Height   int            `json:"height,omitempty"`
+	Duration int            `json:"duration,omitempty"` // Duration in seconds for video assets
+	Thumbs   []adAssetThumb `json:"thumbs,omitempty"`
 }
 
 //easyjson:json
@@ -85,17 +86,15 @@ func (m *itemMetaInfo) addAction(actionType, title, description, url string) {
 
 //easyjson:json
 type item struct {
-	ID         any            `json:"id"`
-	Type       string         `json:"type"`
-	URL        string         `json:"url,omitempty"`
-	Content    string         `json:"content,omitempty"`
-	ContentURL string         `json:"content_url,omitempty"`
-	Fields     map[string]any `json:"fields,omitempty"`
-	Assets     []adAsset      `json:"assets,omitempty"`
-	Tracker    *tracker       `json:"tracker"`
-	Metadata   map[string]any `json:"metadata,omitempty"`
-	AdInfo     *itemMetaInfo  `json:"adinfo,omitempty"`
-	Debug      any            `json:"debug,omitempty"`
+	ID       any            `json:"id"`
+	Type     string         `json:"type"`
+	URL      string         `json:"url,omitempty"`
+	Fields   map[string]any `json:"fields,omitempty"`
+	Assets   []adAsset      `json:"assets,omitempty"`
+	Tracker  *tracker       `json:"tracker"`
+	Metadata map[string]any `json:"metadata,omitempty"`
+	AdInfo   *itemMetaInfo  `json:"adinfo,omitempty"`
+	Debug    any            `json:"debug,omitempty"`
 }
 
 //easyjson:json

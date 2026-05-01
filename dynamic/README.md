@@ -38,13 +38,11 @@ The dynamic endpoint serves structured JSON responses optimized for:
 
 ## Ad Format Types
 
-| Format Type     | Description                                                   | Use Cases                                               |
-| --------------- | ------------------------------------------------------------- | ------------------------------------------------------- |
-| `native`        | Content-style ads with title, description, images, and videos | Editorial integration, sponsored content, video content |
-| `banner`        | Traditional display banners with images, videos, and HTML     | Website monetization, display campaigns, rich media     |
-| `slider_banner` | Multi-asset banner carousels                                  | Product showcases, brand campaigns                      |
-| `slider_video`  | Video carousel presentations                                  | Entertainment, media content                            |
-| `proxy`         | Server-rendered HTML content with `content` or `content_url`  | Legacy systems, iframe integration                      |
+| Format Type | Description                                                    | Use Cases                                               |
+| ----------- | -------------------------------------------------------------- | ------------------------------------------------------- |
+| `native`    | Content-style ads with title, description, images, and videos  | Editorial integration, sponsored content, video content |
+| `banner`    | Traditional display banners with images, videos, and HTML      | Website monetization, display campaigns, rich media     |
+| `proxy`     | Server-rendered HTML content with `iframe_url` or `html` asset | Legacy systems, iframe integration                      |
 
 ## Struct Descriptions
 
@@ -91,15 +89,10 @@ Represents an individual ad unit with content, assets, and tracking.
 **Fields:**
 
 - **`ID`** (`any`): Unique identifier for the ad item
-- **`Type`** (`string`): Ad format type (`native`, `banner`, `slider_banner`, etc.)
+- **`Type`** (`string`): Ad format type (`native`, `banner`, `push`, etc.)
 - **`URL`** (`string`, optional): Click-through destination URL
-- **`Content`** (`string`, optional): Raw HTML/text content for direct rendering (proxy ads; prefer this when present)
-- **`ContentURL`** (`string`, optional): IFrame URL for proxy content delivery (proxy ads)
 - **`Fields`** (`map[string]any`, optional): Dynamic key-value pairs for ad content
 - **`Assets`** (`[]asset`, optional): Media files associated with the ad (images, videos, etc.)
-
-Note: Proxy ads typically provide either `content` (raw HTML) or `content_url` (iframe source). Renderers/templates should prefer `content` when present. Sources may include one or both fields depending on integration; choose the appropriate field according to your rendering strategy.
-
 - **`Tracker`** (`tracker`): Event tracking configuration
 - **`Meta`** (`*itemMetaInfo`, optional): Advertiser and compliance information
 - **`Debug`** (`any`, optional): Debug information (development mode only)

@@ -1,6 +1,6 @@
 //
-// @project GeniusRabbit adstdendpoints 2018 - 2025
-// @author Dmitry Ponomarev <demdxx@gmail.com> 2018 - 2025
+// @project GeniusRabbit adstdendpoints 2018 - 2026
+// @author Dmitry Ponomarev <demdxx@gmail.com> 2018 - 2026
 //
 
 package dynamic
@@ -61,7 +61,7 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 		resp.Debug = map[string]any{
 			"http": map[string]any{
 				"uri":     string(ctx.RequestURI()),
-				"ip":      string(ctx.RemoteIP()),
+				"ip":      ctx.RemoteIP().String(),
 				"method":  string(ctx.Method()),
 				"query":   ctx.QueryArgs().String(),
 				"headers": headers,
@@ -75,21 +75,29 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 			assets       []adAsset
 			aditm        = ad.(adtype.ResponseItem)
 			url          string
-			trackerBlock *tracker
+			trackerBlock = &tracker{}
 		)
 
 		// Generate click URL
-		if !aditm.Format().IsProxy() {
+		if !aditm.Format().IsProxy() && !aditm.Format().IsDirect() {
 			url, _ = e.urlGen.ClickURL(aditm, response)
+		} else if aditm.Format().IsDirect() && !aditm.Impression().IsInterstitial() {
+			url, _ = e.urlGen.DirectURL(events.Direct, aditm, response)
 		}
 
-		trackerBlock = &tracker{
-			Impressions: []string{
-				e.noErrorPixelURL(events.Impression, events.StatusSuccess, aditm.Impression(), aditm, response, false),
-			},
-			Views: []string{
-				e.noErrorPixelURL(events.View, events.StatusSuccess, aditm.Impression(), aditm, response, false),
-			},
+		// Generate no-error impression and view tracking pixels for interstitial and non-direct formats
+		if aditm.Impression().IsInterstitial() || !aditm.Format().IsDirect() {
+			if !aditm.Format().IsDirect() {
+				// If direct format, then the real impression will be tracked by the direct URL, so no need to add impression pixel here
+				trackerBlock.Impressions = append(
+					trackerBlock.Impressions,
+					e.noErrorPixelURL(events.Impression, events.StatusSuccess,
+						aditm.Impression(), aditm, response, false),
+				)
+			}
+			trackerBlock.Views = append(trackerBlock.Views,
+				e.noErrorPixelURL(events.View, events.StatusSuccess,
+					aditm.Impression(), aditm, response, false))
 		}
 
 		// Third-party trackers pixels
@@ -103,7 +111,7 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 			}
 		}
 
-		// Process assets if provided
+		// Process assets if provided in the ad item. This includes generating CDN URLs for asset paths and preparing thumbnails. The assets are collected into a slice of adAsset structs, which will be included in the response item definition.
 		if baseAssets := aditm.Assets(); len(baseAssets) > 0 {
 			assets = make([]adAsset, 0, len(baseAssets))
 			processed := map[string]int{}
@@ -113,12 +121,13 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 				}
 				if idx, ok := processed[as.Name]; !ok {
 					nas := adAsset{
-						Name:   as.Name,
-						Path:   e.urlGen.CDNURL(as.URL),
-						Type:   as.Type.Code(),
-						Width:  as.Width,
-						Height: as.Height,
-						Thumbs: e.thumbsPrepare(as.Thumbs),
+						Name:     as.Name,
+						Path:     e.urlGen.CDNURL(as.URL),
+						Type:     as.Type.Code(),
+						Width:    as.Width,
+						Height:   as.Height,
+						Duration: as.Duration,
+						Thumbs:   e.thumbsPrepare(as.Thumbs),
 					}
 					if !ok {
 						processed[as.Name] = len(assets)
@@ -130,21 +139,50 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 			}
 		}
 
-		// Add item to response group by impression ID
-		resp.getGroupOrCreate(ad.TargetCodename()).addItem(&item{
-			ID:         ad.ID(),
-			Type:       ad.PriorityFormatType().Name(),
-			URL:        url,
-			Content:    aditm.ContentItemString(adtype.ContentItemContent),
-			ContentURL: aditm.ContentItemString(adtype.ContentItemIFrameURL),
-			Fields:     noEmptyFieldsMap(aditm.ContentFields()),
-			Assets:     assets,
-			Tracker:    trackerBlock,
-			AdInfo:     e.prepareItemAdInfo(aditm, response),
+		// Determine ad type for response item
+		adType := ad.PriorityFormatType()
+
+		// For non-direct formats, check for IFrame URL or HTML content in the ad item content fields and add as asset if available. For direct interstitial formats, generate direct URL and add as iframe_url asset.
+		if !aditm.Format().IsDirect() {
+			if contentURL := aditm.ContentItemString(adtype.ContentItemIFrameURL); contentURL != "" {
+				assets = append(assets, adAsset{
+					Name: "main",
+					Type: "iframe_url",
+					Path: contentURL,
+				})
+			} else if content := aditm.ContentItemString(adtype.ContentItemContent); content != "" {
+				assets = append(assets, adAsset{
+					Name: "main",
+					Type: "html",
+					Path: content,
+				})
+			}
+		} else if aditm.Impression().IsInterstitial() {
+			adType = types.FormatProxyType
+			directURL, _ := e.urlGen.DirectURL(events.Direct, aditm, response)
+			assets = append(assets, adAsset{
+				Name: "main",
+				Type: "iframe_url",
+				Path: directURL,
+			})
+		}
+
+		// Ad item definition for response. It includes the ad item ID, type, click URL, assets, and tracking pixels. The ad type is determined based on the priority format type of the ad item, with special handling for interstitial direct formats to set the type as "proxy" and include the direct URL as an iframe asset.
+		adItemObj := &item{
+			ID:      ad.ID(),
+			Type:    adType.Name(),
+			URL:     url,
+			Fields:  noEmptyFieldsMap(aditm.ContentFields()),
+			Assets:  assets,
+			Tracker: trackerBlock,
+			AdInfo:  e.prepareItemAdInfo(aditm, response),
 			Debug: gocast.IfThenExec(response.Request().IsDebug(),
 				func() any { return map[string]any{"adUnit": ad} },
 				func() any { return nil }),
-		})
+		}
+
+		// Add item to response group by impression ID
+		resp.getGroupOrCreate(ad.TargetCodename()).addItem(adItemObj)
 
 		// Add source info
 		e.addSourceInfo(&resp, aditm.Source())
