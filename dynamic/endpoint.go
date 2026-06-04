@@ -74,6 +74,7 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 		var (
 			assets       []adAsset
 			aditm        = ad.(adtype.ResponseItem)
+			cPrep        = adtype.ContentPreparer(response, aditm)
 			url          string
 			trackerBlock = &tracker{}
 		)
@@ -101,14 +102,12 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 		}
 
 		// Third-party trackers pixels
-		if item, _ := ad.(adtype.ResponseItem); item != nil {
-			trackerBlock.Clicks = item.ClickTrackerLinks()
-			if links := item.ViewTrackerLinks(); len(links) > 0 {
-				trackerBlock.Views = append(trackerBlock.Views, links...)
-			}
-			if links := item.ImpressionTrackerLinks(); len(links) > 0 {
-				trackerBlock.Impressions = append(trackerBlock.Impressions, links...)
-			}
+		trackerBlock.Clicks = listContentPrepare(aditm.ClickTrackerLinks(), cPrep)
+		if links := aditm.ViewTrackerLinks(); len(links) > 0 {
+			trackerBlock.Views = append(trackerBlock.Views, listContentPrepare(links, cPrep)...)
+		}
+		if links := aditm.ImpressionTrackerLinks(); len(links) > 0 {
+			trackerBlock.Impressions = append(trackerBlock.Impressions, listContentPrepare(links, cPrep)...)
 		}
 
 		// Process assets if provided in the ad item. This includes generating CDN URLs for asset paths and preparing thumbnails. The assets are collected into a slice of adAsset structs, which will be included in the response item definition.
@@ -122,12 +121,12 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 				if idx, ok := processed[as.Name]; !ok {
 					nas := adAsset{
 						Name:     as.Name,
-						Path:     e.urlGen.CDNURL(as.URL),
+						Path:     cPrep.Replace(e.urlGen.CDNURL(as.URL)),
 						Type:     as.Type.Code(),
 						Width:    as.Width,
 						Height:   as.Height,
 						Duration: as.Duration,
-						Thumbs:   e.thumbsPrepare(as.Thumbs),
+						Thumbs:   e.thumbsPrepare(as.Thumbs, cPrep),
 					}
 					if !ok {
 						processed[as.Name] = len(assets)
@@ -143,18 +142,22 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 		adType := ad.PriorityFormatType()
 
 		// For non-direct formats, check for IFrame URL or HTML content in the ad item content fields and add as asset if available. For direct interstitial formats, generate direct URL and add as iframe_url asset.
-		if !aditm.Format().IsDirect() {
+		if adFormat := aditm.Format(); !adFormat.IsDirect() {
 			if contentURL := aditm.ContentItemString(adtype.ContentItemIFrameURL); contentURL != "" {
 				assets = append(assets, adAsset{
-					Name: "main",
-					Type: "iframe_url",
-					Path: contentURL,
+					Name:   "main",
+					Type:   "iframe_url",
+					Path:   cPrep.Replace(contentURL),
+					Width:  adFormat.Width,
+					Height: adFormat.Height,
 				})
 			} else if content := aditm.ContentItemString(adtype.ContentItemContent); content != "" {
 				assets = append(assets, adAsset{
-					Name: "main",
-					Type: "html",
-					Path: content,
+					Name:   "main",
+					Type:   "html",
+					Path:   cPrep.Replace(content),
+					Width:  adFormat.Width,
+					Height: adFormat.Height,
 				})
 			}
 		} else if aditm.Impression().IsInterstitial() {
@@ -172,10 +175,10 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 			ID:      ad.ID(),
 			Type:    adType.Name(),
 			URL:     url,
-			Fields:  noEmptyFieldsMap(aditm.ContentFields()),
+			Fields:  noEmptyFieldsMap(aditm.ContentFields(), cPrep),
 			Assets:  assets,
 			Tracker: trackerBlock,
-			AdInfo:  e.prepareItemAdInfo(aditm, response),
+			AdInfo:  e.prepareItemAdInfo(aditm, response, cPrep),
 			Debug: gocast.IfThenExec(response.Request().IsDebug(),
 				func() any { return map[string]any{"adUnit": ad} },
 				func() any { return nil }),
@@ -252,7 +255,7 @@ func (e _endpoint) addSourceInfo(resp *Response, source adtype.Source) {
 	})
 }
 
-func (e _endpoint) prepareItemAdInfo(item adtype.ResponseItem, response adtype.Response) *itemMetaInfo {
+func (e _endpoint) prepareItemAdInfo(item adtype.ResponseItem, _ adtype.Response, cPrep *strings.Replacer) *itemMetaInfo {
 	sourceID := ""
 	if source := item.Source(); source != nil {
 		sourceID = u64ID2Str(source.ID())
@@ -268,23 +271,11 @@ func (e _endpoint) prepareItemAdInfo(item adtype.ResponseItem, response adtype.R
 		},
 	}
 	if e.metaConf.ComplaintAdURL != "" || e.metaConf.AboutAdURL != "" {
-		aucID := response.Request().AuctionID()
-		replacer := strings.NewReplacer(
-			"{auctionid}", aucID,
-			"{auction.id}", aucID,
-			"{auc.id}", aucID,
-			"{adid}", item.AdID(),
-			"{ad.id}", item.AdID(),
-			"{campid}", gocast.Str(item.CampaignID()),
-			"{camp.id}", gocast.Str(item.CampaignID()),
-			"{campaignid}", gocast.Str(item.CampaignID()),
-			"{campaign.id}", gocast.Str(item.CampaignID()),
-			"{reason}", "")
 		if e.metaConf.AboutAdURL != "" {
-			adInfo.Ad.AboutURL = replacer.Replace(e.metaConf.AboutAdURL)
+			adInfo.Ad.AboutURL = cPrep.Replace(e.metaConf.AboutAdURL)
 		}
 		if e.metaConf.ComplaintAdURL != "" {
-			adInfo.addAction("complaint", "Report this Ad", "", replacer.Replace(e.metaConf.ComplaintAdURL))
+			adInfo.addAction("complaint", "Report this Ad", "", cPrep.Replace(e.metaConf.ComplaintAdURL))
 		}
 	}
 	return adInfo
@@ -317,11 +308,11 @@ func (e _endpoint) renderEmpty(ctx *fasthttp.RequestCtx, response adtype.Respons
 	return json.NewEncoder(ctx).Encode(resp)
 }
 
-func (e _endpoint) thumbsPrepare(thumbs []admodels.AdFileAssetThumb) []adAssetThumb {
+func (e _endpoint) thumbsPrepare(thumbs []admodels.AdFileAssetThumb, cPrep *strings.Replacer) []adAssetThumb {
 	nthumbs := make([]adAssetThumb, 0, len(thumbs))
 	for _, th := range thumbs {
 		nthumbs = append(nthumbs, adAssetThumb{
-			Path:   e.urlGen.CDNURL(th.URL),
+			Path:   cPrep.Replace(e.urlGen.CDNURL(th.URL)),
 			Type:   th.Type.Code(),
 			Width:  th.Width,
 			Height: th.Height,
@@ -348,7 +339,19 @@ func (e _endpoint) noErrorPixelURL(event events.Type, status uint8, imp *adtype.
 	return url
 }
 
-func noEmptyFieldsMap(m map[string]any) map[string]any {
+//go:inline
+func listContentPrepare(arr []string, prep *strings.Replacer) []string {
+	if prep == nil {
+		return arr
+	}
+	prepared := make([]string, 0, len(arr))
+	for _, s := range arr {
+		prepared = append(prepared, prep.Replace(s))
+	}
+	return prepared
+}
+
+func noEmptyFieldsMap(m map[string]any, prep *strings.Replacer) map[string]any {
 	if len(m) == 0 {
 		return nil
 	}
@@ -357,10 +360,14 @@ func noEmptyFieldsMap(m map[string]any) map[string]any {
 		case string:
 			if val == "" {
 				delete(m, k)
+			} else if prep != nil {
+				m[k] = prep.Replace(val)
 			}
 		case []string:
 			if len(val) == 0 {
 				delete(m, k)
+			} else if prep != nil {
+				m[k] = listContentPrepare(val, prep)
 			}
 		case nil:
 			delete(m, k)

@@ -103,7 +103,7 @@ func (e *_endpoint) execDirect(req *fasthttp.RequestCtx, response adtype.Respons
 				if !ad.IsDirect() {
 					err = ErrInvalidResponseType
 				} else {
-					link = adtype.PrepareURL(ad.ActionURL(), response, ad)
+					link = adtype.ContentPreparer(response, ad).Replace(ad.ActionURL())
 				}
 			case adtype.ResponseMultipleItem:
 				err = ErrMultipleDirectNotSupported
