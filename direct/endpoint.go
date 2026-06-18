@@ -1,6 +1,6 @@
 //
-// @project GeniusRabbit sspserver 2018 - 2019, 2025
-// @author Dmitry Ponomarev <demdxx@gmail.com> 2018 - 2019, 2025
+// @project GeniusRabbit sspserver 2018 - 2019, 2025 - 2026
+// @author Dmitry Ponomarev <demdxx@gmail.com> 2018 - 2019, 2025 - 2026
 //
 
 package direct
@@ -68,6 +68,7 @@ func (e *_endpoint) execDirect(req *fasthttp.RequestCtx, response adtype.Respons
 		zoneID          uint64
 		impID           string
 		link            string
+		userDefLink     = string(req.QueryArgs().Peek("def"))
 		alternativeLink = false
 	)
 
@@ -81,7 +82,11 @@ func (e *_endpoint) execDirect(req *fasthttp.RequestCtx, response adtype.Respons
 			if imps := response.Request().Impressions(); len(imps) > 0 {
 				impID = imps[0].ID
 				if imps[0].Target != nil {
-					link = imps[0].Target.AlternativeAdCode("direct")
+					if userDefLink != "" {
+						link = userDefLink
+					} else {
+						link = imps[0].Target.AlternativeAdCode("direct")
+					}
 					zoneID = uint64(imps[0].TargetID())
 					alternativeLink = link != ""
 				}
