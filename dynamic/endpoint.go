@@ -80,10 +80,12 @@ func (e _endpoint) render(ctx *fasthttp.RequestCtx, response adtype.Response) er
 		)
 
 		// Generate click URL
-		if !aditm.Format().IsProxy() && !aditm.Format().IsDirect() {
-			url, _ = e.urlGen.ClickURL(aditm, response)
-		} else if aditm.Format().IsDirect() && !aditm.Impression().IsInterstitial() {
-			url, _ = e.urlGen.DirectURL(events.Direct, aditm, response)
+		if aditm.ActionURL() != "" {
+			if !aditm.Format().IsProxy() && !aditm.Format().IsDirect() {
+				url, _ = e.urlGen.ClickURL(aditm, response)
+			} else if aditm.Format().IsDirect() && !aditm.Impression().IsInterstitial() {
+				url, _ = e.urlGen.DirectURL(events.Direct, aditm, response)
+			}
 		}
 
 		// Generate no-error impression and view tracking pixels for interstitial and non-direct formats
