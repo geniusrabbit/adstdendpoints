@@ -8,6 +8,7 @@ package templates
 import (
 	"github.com/demdxx/gocast/v2"
 
+	"github.com/geniusrabbit/adcorelib/admodels/types"
 	"github.com/geniusrabbit/adcorelib/adtype"
 
 //line private/templates/ad_native.qtpl:9
@@ -27,7 +28,7 @@ var (
 func streamadRenderNative(qw422016 *qt422016.Writer, resp adtype.Response, it adtype.ResponseItem) {
 //line private/templates/ad_native.qtpl:11
 	urlStr := URLGen.MustClickURL(it, resp)
-	asset := it.MainAsset()
+	asset := it.MainAsset(types.AdFileAssetImageType)
 	format := it.Format()
 	config := format.GetConfig()
 

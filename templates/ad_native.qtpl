@@ -2,6 +2,7 @@
   import (
     "github.com/demdxx/gocast/v2"
 
+	"github.com/geniusrabbit/adcorelib/admodels/types"
     "github.com/geniusrabbit/adcorelib/adtype"
   )
 %}
@@ -9,7 +10,7 @@
 {% func adRenderNative(resp adtype.Responser, it adtype.ResponserItem) %}{% collapsespace %}{% stripspace %}
   {%code
     urlStr := URLGen.MustClickURL(it, resp)
-    asset  := it.MainAsset()
+    asset  := it.MainAsset(types.AdFileAssetImageType)
     format := it.Format()
     config := format.GetConfig()
   %}
