@@ -1,8 +1,5 @@
-//
-// @project GeniusRabbit adstdendpoints 2018 - 2026
-// @author Dmitry Ponomarev <demdxx@gmail.com> 2018 - 2026
-//
-
+// Package dynamic implements the dynamic endpoint for the adserver.
+// It is used to serve the dynamic ads to the clients.
 package dynamic
 
 import (
