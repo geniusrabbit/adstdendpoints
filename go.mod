@@ -4,7 +4,7 @@ go 1.27
 
 require (
 	github.com/demdxx/gocast/v2 v2.12.2
-	github.com/geniusrabbit/adcorelib v0.1.0
+	github.com/geniusrabbit/adcorelib v0.1.1-0.20261124143530-919cd87e86af
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/valyala/fasthttp v1.78.0
 	github.com/valyala/quicktemplate v1.8.0
@@ -20,11 +20,11 @@ require (
 	github.com/demdxx/langlib v0.0.0-20261103171510-4709d51e00ca // indirect
 	github.com/demdxx/xtypes v0.3.1 // indirect
 	github.com/fasthttp/router v1.5.4 // indirect
-	github.com/geniusrabbit/gogeo v1.3.0 // indirect
+	github.com/geniusrabbit/gogeo v1.3.1-0.20261123153416-bf0a57121410 // indirect
 	github.com/geniusrabbit/gosql/v2 v2.3.3 // indirect
 	github.com/geniusrabbit/hourstable v1.0.0 // indirect
 	github.com/geniusrabbit/notificationcenter/v2 v2.5.0 // indirect
-	github.com/geniusrabbit/udetect v0.1.0 // indirect
+	github.com/geniusrabbit/udetect v0.1.1-0.20261124143443-8e9e9c185050 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.33.0 // indirect
 	github.com/guregu/null v4.0.0+incompatible // indirect
